@@ -1,0 +1,33 @@
+# ingress.yaml
+# nginx Ingress for ArgoCD.
+# ArgoCD runs with server.insecure=true (HTTP on port 8080).
+# nginx terminates TLS and forwards HTTP to argocd-server:80.
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd
+  namespace: argocd
+  labels:
+    app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: argocd.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: argocd-server
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - argocd.local
+    secretName: argocd-tls

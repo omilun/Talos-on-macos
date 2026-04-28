@@ -1,0 +1,112 @@
+# ingress.yaml
+# Kubernetes Ingress resources for monitoring services.
+# Routes hostname-based traffic through the nginx ingress controller.
+# No ports in URLs — standard 80/443 only.
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: grafana.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: kube-prometheus-stack-grafana
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - grafana.local
+    secretName: grafana-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: prometheus.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: kube-prometheus-stack-prometheus
+            port:
+              number: 9090
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - prometheus.local
+    secretName: prometheus-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: alertmanager.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: kube-prometheus-stack-alertmanager
+            port:
+              number: 9093
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - alertmanager.local
+    secretName: alertmanager-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loki
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: loki.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: loki-gateway
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - loki.local
+    secretName: loki-tls

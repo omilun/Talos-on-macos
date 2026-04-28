@@ -419,37 +419,43 @@ flux get all -A --watch
 
 ### 6 — Access the UIs
 
-#### ✅ Kubernetes Ingress (Standard Approach - Recommended)
+#### ✅ Clean Domain Access — No Ports, No `/etc/hosts`
 
-Your cluster uses **Kubernetes Ingress** with the nginx controller — the professional way!
+The cluster runs an **in-cluster CoreDNS** server that resolves all service hostnames.  
+Configure macOS **once** with the `setup-dns.sh` script and access everything by domain name.
 
-**Quick Start** (2 commands):
+**One-time macOS setup**:
 
 ```bash
-# 1. Add hostname entries
-echo "192.168.64.10  argocd.local grafana.local prometheus.local alertmanager.local" | sudo tee -a /etc/hosts
-
-# 2. Access via standard URLs (no ports, no NodePorts!)
-open http://argocd.local
-open http://grafana.local
-open http://prometheus.local
-open http://alertmanager.local
+./setup-dns.sh
 ```
 
-**Why this is better**:
-- ✅ **Clean URLs**: `argocd.local` (no `:32232` port numbers)
-- ✅ **Standard ports**: 80/443 (industry standard, not random NodePorts)
-- ✅ **Professional**: Production Kubernetes architecture
-- ✅ **Scalable**: All services on same IP and ports (hostname-based routing)
-- ✅ **No NodePorts**: No ugly port numbers to remember
+That's it. You can now curl and open services by domain name:
 
-**Credentials**:
-- **ArgoCD**: `admin` / `rQwuRbjDeHtXkImn`
-- **Grafana**: `admin` / `change-me`
+```bash
+curl https://argocd.local
+curl https://grafana.local
+curl https://prometheus.local
+curl https://alertmanager.local
+curl https://loki.local
+```
 
-**How it works**: See [docs/ingress-architecture.md](docs/ingress-architecture.md) for technical details.
+Or in the browser:
+- **ArgoCD**: <https://argocd.local> — `admin` / `rQwuRbjDeHtXkImn`
+- **Grafana**: <https://grafana.local> — `admin` / `change-me`
+- **Prometheus**: <https://prometheus.local>
+- **Alertmanager**: <https://alertmanager.local>
+- **Loki**: <https://loki.local> (push API endpoint)
 
-#### Option B: Direct IP + Port (If Ingress Has Issues)
+**How it works**:
+1. `setup-dns.sh` writes `/etc/resolver/local` — tells macOS to use the in-cluster DNS for `*.local`
+2. In-cluster CoreDNS (exposed on NodePort 30053) resolves all service names → ingress IP
+3. nginx ingress controller routes by hostname to the right service
+4. cert-manager provides TLS via wildcard `*.local` certificate
+
+See [docs/ingress-architecture.md](docs/ingress-architecture.md) for full technical details.
+
+#### Fallback: Direct IP (If DNS Isn't Configured)
 
 If ingress isn't working, fallback to direct IP:
 

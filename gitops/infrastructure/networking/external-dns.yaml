@@ -1,0 +1,117 @@
+# external-dns.yaml
+# In-cluster CoreDNS that resolves *.local service hostnames to the
+# nginx ingress controller IP (192.168.64.10 — hostNetwork node).
+#
+# macOS one-time setup:
+#   sudo mkdir -p /etc/resolver
+#   printf "nameserver 192.168.64.6\nport 30053\n" | sudo tee /etc/resolver/local
+#
+# After that: curl https://argocd.local works with no /etc/hosts entries.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-coredns
+  namespace: networking
+  labels:
+    app.kubernetes.io/managed-by: flux
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+
+        hosts {
+            192.168.64.10 argocd.local
+            192.168.64.10 grafana.local
+            192.168.64.10 prometheus.local
+            192.168.64.10 alertmanager.local
+            192.168.64.10 loki.local
+            ttl 60
+            reload 15s
+            fallthrough
+        }
+
+        forward . 8.8.8.8 1.1.1.1
+        cache 300
+        loop
+        reload
+        loadbalance
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-coredns
+  namespace: networking
+  labels:
+    app: external-coredns
+    app.kubernetes.io/managed-by: flux
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: external-coredns
+  template:
+    metadata:
+      labels:
+        app: external-coredns
+    spec:
+      containers:
+      - name: coredns
+        image: coredns/coredns:1.11.3
+        args: ["-conf", "/etc/coredns/Corefile"]
+        ports:
+        - containerPort: 53
+          protocol: UDP
+          name: dns-udp
+        - containerPort: 53
+          protocol: TCP
+          name: dns-tcp
+        - containerPort: 8080
+          name: health
+        - containerPort: 8181
+          name: ready
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8181
+          initialDelaySeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /etc/coredns
+      volumes:
+      - name: config
+        configMap:
+          name: external-coredns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-coredns
+  namespace: networking
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  selector:
+    app: external-coredns
+  type: NodePort
+  ports:
+  - name: dns-udp
+    port: 53
+    targetPort: 53
+    protocol: UDP
+    nodePort: 30053
+  - name: dns-tcp
+    port: 53
+    targetPort: 53
+    protocol: TCP
+    nodePort: 30053
