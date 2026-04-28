@@ -419,61 +419,57 @@ flux get all -A --watch
 
 ### 6 — Access the UIs
 
-#### Option A: HTTPS with Hostnames (Recommended)
+#### ✅ Kubernetes Ingress (Standard Approach - Recommended)
 
-For clean HTTPS access via `*.local` domains (no IP addresses):
+Your cluster uses **Kubernetes Ingress** with the nginx controller — the professional way!
 
-**Quick Start** (copy-paste ready):
+**Quick Start** (2 commands):
 
 ```bash
-# 1. Add to /etc/hosts
-echo "192.168.64.6    argocd.local grafana.local prometheus.local alertmanager.local" | sudo tee -a /etc/hosts
+# 1. Add hostname entries
+echo "192.168.64.10  argocd.local grafana.local prometheus.local alertmanager.local" | sudo tee -a /etc/hosts
 
-# 2. Extract and trust the self-signed CA
-export KUBECONFIG=/tmp/kubeconfig.yaml
-kubectl get secret -n networking wildcard-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/talos-ca.crt
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/talos-ca.crt
-
-# 3. Access services (clean HTTPS, no browser warnings)
-open https://argocd.local:31223        # HTTPS port
-open https://grafana.local:31626       # HTTP (no HTTPS)
-open https://prometheus.local:32176    # HTTP (no HTTPS)
-open https://alertmanager.local:9093   # HTTP (no HTTPS)
+# 2. Access via standard URLs (no ports, no NodePorts!)
+open http://argocd.local
+open http://grafana.local
+open http://prometheus.local
+open http://alertmanager.local
 ```
 
-**What you get**:
-- ✅ Clean HTTPS URLs (no IP addresses needed)
-- ✅ Green lock icon in browser for ArgoCD (CA trusted)
-- ✅ Works immediately, no additional setup
-- ✅ Single wildcard certificate for all services
+**Why this is better**:
+- ✅ **Clean URLs**: `argocd.local` (no `:32232` port numbers)
+- ✅ **Standard ports**: 80/443 (industry standard, not random NodePorts)
+- ✅ **Professional**: Production Kubernetes architecture
+- ✅ **Scalable**: All services on same IP and ports (hostname-based routing)
+- ✅ **No NodePorts**: No ugly port numbers to remember
 
-Credentials:
+**Credentials**:
 - **ArgoCD**: `admin` / `rQwuRbjDeHtXkImn`
 - **Grafana**: `admin` / `change-me`
 
-See [docs/dns-tls-setup.md](docs/dns-tls-setup.md) for details and troubleshooting.
+**How it works**: See [docs/ingress-architecture.md](docs/ingress-architecture.md) for technical details.
 
-#### Option B: Direct IP + NodePort (Fallback)
+#### Option B: Direct IP + Port (If Ingress Has Issues)
 
-If HTTPS doesn't work, access services directly via IP:NodePort:
+If ingress isn't working, fallback to direct IP:
 
 ```bash
-# Find primary node IP
-kubectl get nodes -o wide | grep control-plane | head -1
-# Example: talos-jy0-m74   Ready    control-plane   ...   192.168.64.6
+# Find the node running ingress controller
+kubectl get pods -n ingress-nginx -o wide | head -2
+# Note the IP from the output (e.g., 192.168.64.10)
 
-# Services on 192.168.64.6
+# Use that IP in browser
+http://192.168.64.10   # Will try to load based on local hostname
 ```
 
-| Service | Protocol | URL | Credentials |
-|---------|----------|-----|-----------|
-| ArgoCD | HTTP | `http://192.168.64.6:32232` | `admin` / `rQwuRbjDeHtXkImn` |
-| ArgoCD | HTTPS | `https://192.168.64.6:31223` | `admin` / `rQwuRbjDeHtXkImn` |
-| Grafana | HTTP | `http://192.168.64.6:31626` | `admin` / `change-me` |
-| Prometheus | HTTP | `http://192.168.64.6:32176` | — |
-| Alertmanager | HTTP | `http://192.168.64.6:32227` | — |
+| Service | URL |
+|---------|-----|
+| ArgoCD | `http://192.168.64.10` (redirect to HTTPS) |
+| Grafana | `http://192.168.64.10` (add header: `Host: grafana.local`) |
+| Prometheus | `http://192.168.64.10` (add header: `Host: prometheus.local`) |
+| Alertmanager | `http://192.168.64.10` (add header: `Host: alertmanager.local`) |
 
-See [docs/accessing-services.md](docs/accessing-services.md) for port discovery and alternatives.
+See [docs/accessing-services.md](docs/accessing-services.md) for manual header testing and troubleshooting.
 
 ---
 
