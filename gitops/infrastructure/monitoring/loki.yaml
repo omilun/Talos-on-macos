@@ -53,17 +53,13 @@ spec:
       replicas: 1
       persistence:
         enabled: false   # emptyDir for dev
-      # Talos has readOnlyRootFilesystem — explicitly mount writable emptyDirs
+      # Talos has readOnlyRootFilesystem — explicitly mount writable emptyDir at /var/loki
       extraVolumes:
         - name: loki-data
-          emptyDir: {}
-        - name: loki-rules
           emptyDir: {}
       extraVolumeMounts:
         - name: loki-data
           mountPath: /var/loki
-        - name: loki-rules
-          mountPath: /rules
 
     # Disable components not needed in single-binary mode
     read:
