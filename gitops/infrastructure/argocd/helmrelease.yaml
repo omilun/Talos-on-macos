@@ -45,24 +45,28 @@ spec:
         server.insecure: "true"
 
     server:
+      replicas: 1
       metrics:
         enabled: true
         serviceMonitor:
           enabled: true
 
     applicationSet:
+      replicas: 1
       metrics:
         enabled: true
         serviceMonitor:
           enabled: true
 
     controller:
+      replicas: 1
       metrics:
         enabled: true
         serviceMonitor:
           enabled: true
 
     repoServer:
+      replicas: 1
       metrics:
         enabled: true
         serviceMonitor:
@@ -80,11 +84,3 @@ spec:
     # Disable HA components — single replicas are fine for a dev cluster
     redis-ha:
       enabled: false
-    controller:
-      replicas: 1
-    server:
-      replicas: 1
-    repoServer:
-      replicas: 1
-    applicationSet:
-      replicas: 1
