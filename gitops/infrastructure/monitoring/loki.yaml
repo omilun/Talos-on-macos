@@ -65,6 +65,12 @@ spec:
     gateway:
       enabled: true
 
+    # Disable caching — memcached requires too much memory for a dev cluster
+    chunksCache:
+      enabled: false
+    resultsCache:
+      enabled: false
+
     # Disable Minio (we use filesystem storage)
     minio:
       enabled: false
