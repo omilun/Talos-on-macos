@@ -54,20 +54,19 @@ macOS Apple Silicon
 │
 └─ Tart (lightweight ARM64 VMs)
    ├─ talos-cp1  ─┐
-   ├─ talos-cp2  ─┼─ HA control-plane (VIP: 192.168.64.100)
+   ├─ talos-cp2  ─┼─ HA control-plane (Talos VIP: 192.168.64.100)
    ├─ talos-cp3  ─┘
    ├─ talos-w1   ─┐
    ├─ talos-w2   ─┼─ workers
    └─ talos-w3   ─┘
       │
       └─ Kubernetes platform (Flux-managed)
-         ├─ Cilium v1.19          CNI + kube-proxy replacement + Gateway API
-         ├─ Gateway API           HTTPRoutes → cilium class
-         ├─ cert-manager          self-signed wildcard TLS (ACME-ready)
-         ├─ ArgoCD                app delivery  →  https://argocd.local
-         ├─ Prometheus            metrics       →  https://prometheus.local
-         ├─ Grafana               dashboards    →  https://grafana.local
-         ├─ Alertmanager                        →  https://alertmanager.local
+         ├─ Cilium v1.19          CNI + kube-proxy replacement
+         ├─ cert-manager          TLS certificates (self-signed, ACME-ready)
+         ├─ ArgoCD                app delivery  →  http://192.168.64.6:32232
+         ├─ Prometheus            metrics       →  http://192.168.64.6:<nodeport>
+         ├─ Grafana               dashboards    →  http://192.168.64.6:<nodeport>
+         ├─ Alertmanager                        →  http://192.168.64.6:<nodeport>
          └─ Loki + Promtail       log aggregation (all 6 nodes)
 ```
 
@@ -420,30 +419,34 @@ flux get all -A --watch
 
 ### 6 — Access the UIs
 
-Get the Gateway LoadBalancer IP (assigned by Cilium's L2 announcements):
+Services are exposed as **NodePort** services on your cluster nodes. The primary control-plane node is:
 
 ```bash
-kubectl get gateway main-gateway -n networking \
-  -o jsonpath='{.status.addresses[0].value}'
+# Find the primary node IP
+kubectl get nodes -o wide | grep control-plane | head -1
+# Output: talos-jy0-m74   Ready    control-plane   ...   192.168.64.6
 ```
 
-Add to `/etc/hosts` (replace `GATEWAY_IP` with the output above):
+Get the NodePort for each service:
 
 ```bash
-sudo tee -a /etc/hosts << EOF
-GATEWAY_IP  argocd.local
-GATEWAY_IP  grafana.local
-GATEWAY_IP  prometheus.local
-GATEWAY_IP  alertmanager.local
-EOF
+# ArgoCD HTTPS port
+kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
+# Output: 31223
+
+# Grafana port
+kubectl get svc prometheus-grafana -n monitoring -o jsonpath='{.spec.ports[0].nodePort}'
+
+# Prometheus port  
+kubectl get svc kube-prometheus-stack-prometheus -n monitoring -o jsonpath='{.spec.ports[0].nodePort}'
 ```
 
 | Service | URL | Default credentials |
 |---------|-----|-------------------|
-| ArgoCD | https://argocd.local | `admin` / see note below |
-| Grafana | https://grafana.local | `admin` / `change-me` |
-| Prometheus | https://prometheus.local | — |
-| Alertmanager | https://alertmanager.local | — |
+| ArgoCD | `http://192.168.64.6:<NODEPORT>` | `admin` / see note below |
+| Grafana | `http://192.168.64.6:<NODEPORT>` | `admin` / `change-me` |
+| Prometheus | `http://192.168.64.6:<NODEPORT>` | — |
+| Alertmanager | `http://192.168.64.6:<NODEPORT>` | — |
 
 > **ArgoCD password** (auto-generated on first install):
 > ```bash
@@ -451,7 +454,9 @@ EOF
 >   -o jsonpath='{.data.password}' | base64 -d
 > ```
 
-TLS uses a self-signed root CA — your browser will warn on first visit. Accept the certificate or add the CA to your keychain (see [Trusting the CA](#trusting-the-self-signed-ca)).
+> **Why NodePort?** Tart's virtual network topology has limitations with Cilium's LoadBalancer implementation. NodePort is the most reliable method for accessing services. See [docs/accessing-services.md](docs/accessing-services.md) for more details and alternative access methods.
+
+---
 
 ---
 
