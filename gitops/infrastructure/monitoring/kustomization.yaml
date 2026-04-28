@@ -1,0 +1,8 @@
+# infrastructure/monitoring/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - kube-prometheus-stack.yaml
+  - loki.yaml
+  - httproutes.yaml

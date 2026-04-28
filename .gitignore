@@ -1,0 +1,16 @@
+# Generated outputs — never commit
+_out/
+
+# macOS
+.DS_Store
+
+# Terraform working files
+bootstrap/terraform/.terraform/
+bootstrap/terraform/terraform.tfstate
+bootstrap/terraform/terraform.tfstate.backup
+bootstrap/terraform/*.tfvars
+bootstrap/terraform/.terraform.lock.hcl
+
+# Secrets — never commit
+*.pem
+*.key

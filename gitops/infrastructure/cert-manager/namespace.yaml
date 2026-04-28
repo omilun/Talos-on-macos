@@ -1,0 +1,7 @@
+# infrastructure/cert-manager/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    app.kubernetes.io/managed-by: flux

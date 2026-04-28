@@ -1,0 +1,12 @@
+# controlplane-patch.yaml — applied only to control-plane nodes
+# Sets the install disk, VIP, and etcd advertise settings
+---
+machine:
+  install:
+    disk: /dev/vda          # virtio-blk disk name in Apple VZ / Tart
+  network:
+    interfaces:
+      - interface: enp0s1     # Tart/Apple VZ virtio-net interface name
+        dhcp: true
+        vip:
+          ip: 192.168.64.100  # TALOS_VIP — updated by 04-generate-configs.sh if overridden

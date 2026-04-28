@@ -1,0 +1,37 @@
+# infrastructure/cert-manager/helmrelease.yaml
+# Installs cert-manager via Flux HelmRelease.
+# crds: CreateReplace — Flux manages cert-manager CRDs, upgrading them with the chart.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: cert-manager
+      version: ">=1.17.0 <2.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+        namespace: flux-system
+      interval: 24h
+  install:
+    crds: Create
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  values:
+    crds:
+      enabled: true
+    # Talos: no hostNetwork needed; cert-manager runs fine in-cluster
+    global:
+      leaderElection:
+        namespace: cert-manager
+    # Reduce log verbosity in dev
+    logLevel: 1

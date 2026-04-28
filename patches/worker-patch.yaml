@@ -1,0 +1,5 @@
+# worker-patch.yaml — applied only to worker nodes
+---
+machine:
+  install:
+    disk: /dev/vda          # virtio-blk disk name in Apple VZ / Tart

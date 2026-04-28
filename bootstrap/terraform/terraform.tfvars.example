@@ -1,0 +1,34 @@
+# Copy this file to terraform.tfvars and adjust values as needed.
+# Most defaults work out of the box for a macOS Apple Silicon machine with Tart.
+
+# ── Talos / Kubernetes ────────────────────────────────────────────────────────
+# talos_version      = "v1.13.0"
+# kubernetes_version = "1.35.2"
+# cluster_name       = "talos-tart-ha"
+
+# ── Network ───────────────────────────────────────────────────────────────────
+# talos_vip           = "192.168.64.100"   # VIP for macOS -> cluster access
+# tart_bridge_gateway = "192.168.64.1"     # macOS bridge gateway (do not change)
+
+# ── VM sizing ─────────────────────────────────────────────────────────────────
+# image_path   = "~/Downloads/metal-arm64.raw"
+# disk_size_gb = 20
+# cp_cpu        = 2
+# cp_memory_gb  = 4
+# worker_cpu    = 2
+# worker_memory_gb = 2
+
+# ── Outputs ───────────────────────────────────────────────────────────────────
+# out_dir = "../../_out"   # relative to terraform/ directory
+
+# ── Gateway API ───────────────────────────────────────────────────────────────
+# gateway_api_version = "v1.2.1"
+
+# ── Flux GitOps ───────────────────────────────────────────────────────────────
+# flux_git_repository_url = "https://github.com/omidrajabagha/talos-k8s-macos"
+# flux_git_branch         = "main"
+# flux_git_path           = "gitops/clusters/tart-lab"
+#
+# For private repos, provide a GitHub PAT with repo scope:
+# flux_github_token = "ghp_..."
+# (or set TF_VAR_flux_github_token in your shell — never commit tokens)

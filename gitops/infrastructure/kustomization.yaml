@@ -1,0 +1,12 @@
+# infrastructure/kustomization.yaml
+# Orchestrates all infrastructure layers in strict dependency order using
+# Flux Kustomization dependsOn. Each layer only reconciles after the previous
+# layer is healthy.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - sources
+  - networking
+  - cert-manager
+  - argocd
+  - monitoring

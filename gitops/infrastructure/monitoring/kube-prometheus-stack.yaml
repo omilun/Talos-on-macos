@@ -1,0 +1,105 @@
+# infrastructure/monitoring/kube-prometheus-stack.yaml
+# Installs Prometheus + Grafana + Alertmanager + node-exporter + kube-state-metrics.
+#
+# Storage: emptyDir (dev cluster — data is lost on pod restart).
+#          For persistent storage add a StorageClass (OpenEBS/Longhorn) and set
+#          prometheus.prometheusSpec.storageSpec and grafana.persistence.enabled.
+#
+# Access:
+#   https://grafana.local        (admin / change-me — update via Flux secret)
+#   https://prometheus.local
+#   https://alertmanager.local
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: ">=65.0.0 <100.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      interval: 24h
+  install:
+    crds: Create
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  values:
+    # ── Grafana ────────────────────────────────────────────────────────────────
+    grafana:
+      adminPassword: "change-me"   # Override with a Flux Secret or SOPS in production
+      defaultDashboardsEnabled: true
+      defaultDashboardsTimezone: browser
+
+      # Grafana runs plain HTTP internally; Gateway terminates TLS
+      grafana.ini:
+        server:
+          root_url: "https://grafana.local"
+          serve_from_sub_path: false
+
+      # Pre-configure Loki datasource (Loki will be installed separately)
+      additionalDataSources:
+        - name: Loki
+          type: loki
+          url: http://loki-gateway.monitoring.svc.cluster.local
+          access: proxy
+          isDefault: false
+
+      persistence:
+        enabled: false   # emptyDir for dev
+
+      sidecar:
+        dashboards:
+          enabled: true
+          searchNamespace: ALL
+
+    # ── Prometheus ─────────────────────────────────────────────────────────────
+    prometheus:
+      prometheusSpec:
+        retention: 30d
+        # Scrape all ServiceMonitors and PodMonitors across all namespaces
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+        # emptyDir for dev — replace with storageSpec for persistence
+        storageSpec: {}
+
+    # ── Alertmanager ───────────────────────────────────────────────────────────
+    alertmanager:
+      alertmanagerSpec:
+        storage: {}   # emptyDir for dev
+
+    # ── Node exporter ──────────────────────────────────────────────────────────
+    prometheus-node-exporter:
+      hostRootFsMount:
+        enabled: false   # Talos: read-only rootfs, disable hostRootFs mount
+      extraArgs:
+        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+        - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+
+    # ── kube-state-metrics ────────────────────────────────────────────────────
+    kube-state-metrics:
+      metricLabelsAllowlist:
+        - pods=[*]
+        - deployments=[*]
+        - statefulsets=[*]
+        - daemonsets=[*]
+
+    # ── Talos: disable components that use hostPath kubeconfig ────────────────
+    # Talos nodes do not expose /etc/kubernetes — these scrapers need static configs.
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeEtcd:
+      enabled: false   # Talos etcd is not exposed externally by default

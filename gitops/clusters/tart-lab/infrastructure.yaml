@@ -1,0 +1,17 @@
+# clusters/tart-lab/infrastructure.yaml
+# Flux Kustomization: reconciles all infrastructure components in dependency order.
+# Terraform bootstraps Flux pointing here after cluster setup.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/infrastructure
+  prune: true
+  wait: true
+  timeout: 10m

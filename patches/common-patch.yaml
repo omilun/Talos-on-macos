@@ -1,0 +1,24 @@
+# common-patch.yaml — applied to BOTH controlplane and worker nodes
+# Disables kube-proxy (Cilium eBPF replaces it), disables default CNI (Flannel),
+# and tunes kubelet for Cilium eBPF.
+---
+cluster:
+  proxy:
+    disabled: true          # Cilium kube-proxy replacement takes over
+  network:
+    cni:
+      name: none            # Disable Talos-managed Flannel; Cilium installed post-bootstrap
+
+machine:
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: "true"
+  # Talos-recommended sysctls for Cilium eBPF
+  sysctls:
+    net.core.bpf_jit_enable: "1"
+    net.ipv4.conf.all.rp_filter: "0"
+    net.ipv4.conf.default.rp_filter: "0"
+  kernel:
+    modules:
+      - name: br_netfilter
+      # NOTE: ip6_tables is NOT included — module is absent on Talos ARM64 and causes log noise

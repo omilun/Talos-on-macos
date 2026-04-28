@@ -1,0 +1,90 @@
+# infrastructure/argocd/helmrelease.yaml
+# ArgoCD installed via Flux HelmRelease.
+#
+# Design choices:
+#   - server.insecure=true: ArgoCD runs HTTP internally; TLS is terminated by the
+#     Gateway (wildcard-tls from cert-manager). This is standard when using an
+#     ingress/gateway for TLS.
+#   - Metrics enabled so Prometheus scrapes ArgoCD without extra config.
+#   - Redis HA disabled (dev cluster, single-replica is fine).
+#   - notifications enabled for future Slack/email alerting.
+#
+# Access: https://argocd.local  (add to /etc/hosts → Gateway LoadBalancer IP)
+# Initial password: kubectl get secret argocd-initial-admin-secret -n argocd \
+#                     -o jsonpath='{.data.password}' | base64 -d && echo
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: argo-cd
+      version: ">=7.0.0 <8.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: argo
+        namespace: flux-system
+      interval: 24h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  values:
+    global:
+      domain: argocd.local
+
+    configs:
+      params:
+        # Run ArgoCD server in insecure mode — Gateway terminates TLS
+        server.insecure: "true"
+
+    server:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+
+    applicationSet:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+
+    controller:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+
+    repoServer:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+
+    redis:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+
+    notifications:
+      enabled: true
+
+    # Disable HA components — single replicas are fine for a dev cluster
+    redis-ha:
+      enabled: false
+    controller:
+      replicas: 1
+    server:
+      replicas: 1
+    repoServer:
+      replicas: 1
+    applicationSet:
+      replicas: 1
