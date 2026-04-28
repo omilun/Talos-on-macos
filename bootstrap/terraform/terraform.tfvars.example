@@ -1,5 +1,8 @@
 # Copy this file to terraform.tfvars and adjust values as needed.
 # Most defaults work out of the box for a macOS Apple Silicon machine with Tart.
+#
+# REQUIRED: set flux_git_repository_url to YOUR fork of this repo.
+# All other values are optional — the defaults provision a working cluster.
 
 # ── Talos / Kubernetes ────────────────────────────────────────────────────────
 # talos_version      = "v1.13.0"
@@ -11,12 +14,12 @@
 # tart_bridge_gateway = "192.168.64.1"     # macOS bridge gateway (do not change)
 
 # ── VM sizing ─────────────────────────────────────────────────────────────────
-# image_path   = "~/Downloads/metal-arm64.raw"
-# disk_size_gb = 20
-# cp_cpu        = 2
-# cp_memory_gb  = 4
-# worker_cpu    = 2
-# worker_memory_gb = 2
+# image_path       = "~/Downloads/metal-arm64.raw"
+# disk_size_gb     = 20
+# cp_cpu           = 2
+# cp_memory_gb     = 4
+# worker_cpu       = 2
+# worker_memory_gb = 2    # minimum 2 — Loki requires ~512Mi
 
 # ── Outputs ───────────────────────────────────────────────────────────────────
 # out_dir = "../../_out"   # relative to terraform/ directory
@@ -25,7 +28,8 @@
 # gateway_api_version = "v1.2.1"
 
 # ── Flux GitOps ───────────────────────────────────────────────────────────────
-# flux_git_repository_url = "https://github.com/omidrajabagha/talos-k8s-macos"
+# REQUIRED: point at your fork so you can commit changes to it
+flux_git_repository_url = "https://github.com/YOUR_USERNAME/Talos-on-macos"
 # flux_git_branch         = "main"
 # flux_git_path           = "gitops/clusters/tart-lab"
 #
