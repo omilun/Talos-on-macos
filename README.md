@@ -421,42 +421,41 @@ flux get all -A --watch
 
 #### Option A: HTTPS with Hostnames (Recommended)
 
-For clean HTTPS access via `*.ha.talos-on-mac.local` (no IP addresses):
+For clean HTTPS access via `*.local` domains (no IP addresses):
 
 **Quick Start** (copy-paste ready):
 
 ```bash
-# 1. Add to /etc/hosts (temporary until DNS server deploys in cluster)
-echo "192.168.64.6    ha.talos-on-mac.local argocd.ha.talos-on-mac.local grafana.ha.talos-on-mac.local prometheus.ha.talos-on-mac.local alertmanager.ha.talos-on-mac.local" | sudo tee -a /etc/hosts
+# 1. Add to /etc/hosts
+echo "192.168.64.6    argocd.local grafana.local prometheus.local alertmanager.local" | sudo tee -a /etc/hosts
 
 # 2. Extract and trust the self-signed CA
 export KUBECONFIG=/tmp/kubeconfig.yaml
-kubectl get secret -n networking wildcard-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/talos-on-mac-ca.crt
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/talos-on-mac-ca.crt
+kubectl get secret -n networking wildcard-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/talos-ca.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/talos-ca.crt
 
 # 3. Access services (clean HTTPS, no browser warnings)
-open https://argocd.ha.talos-on-mac.local:32232
-open https://grafana.ha.talos-on-mac.local:31626
-open https://prometheus.ha.talos-on-mac.local:32176
-open https://alertmanager.ha.talos-on-mac.local:32227
+open https://argocd.local:31223        # HTTPS port
+open https://grafana.local:31626       # HTTP (no HTTPS)
+open https://prometheus.local:32176    # HTTP (no HTTPS)
+open https://alertmanager.local:9093   # HTTP (no HTTPS)
 ```
 
 **What you get**:
 - ✅ Clean HTTPS URLs (no IP addresses needed)
-- ✅ Green lock icon in browser (CA trusted)
-- ✅ Works immediately, no dnsmasq installation
+- ✅ Green lock icon in browser for ArgoCD (CA trusted)
+- ✅ Works immediately, no additional setup
 - ✅ Single wildcard certificate for all services
-- ✅ Foundation for production DNS server in cluster (Phase 2)
 
 Credentials:
 - **ArgoCD**: `admin` / `rQwuRbjDeHtXkImn`
 - **Grafana**: `admin` / `change-me`
 
-See [docs/dns-tls-setup.md](docs/dns-tls-setup.md) for details, Phase 2 (DNS in cluster), and troubleshooting.
+See [docs/dns-tls-setup.md](docs/dns-tls-setup.md) for details and troubleshooting.
 
 #### Option B: Direct IP + NodePort (Fallback)
 
-If HTTPS doesn't work, access services directly via IP:NodePort (HTTP, no setup required):
+If HTTPS doesn't work, access services directly via IP:NodePort:
 
 ```bash
 # Find primary node IP
@@ -466,12 +465,13 @@ kubectl get nodes -o wide | grep control-plane | head -1
 # Services on 192.168.64.6
 ```
 
-| Service | NodePort | URL | Credentials |
+| Service | Protocol | URL | Credentials |
 |---------|----------|-----|-----------|
-| ArgoCD | 32232 | `http://192.168.64.6:32232` | `admin` / `rQwuRbjDeHtXkImn` |
-| Grafana | 31626 | `http://192.168.64.6:31626` | `admin` / `change-me` |
-| Prometheus | 32176 | `http://192.168.64.6:32176` | — |
-| Alertmanager | 32227 | `http://192.168.64.6:32227` | — |
+| ArgoCD | HTTP | `http://192.168.64.6:32232` | `admin` / `rQwuRbjDeHtXkImn` |
+| ArgoCD | HTTPS | `https://192.168.64.6:31223` | `admin` / `rQwuRbjDeHtXkImn` |
+| Grafana | HTTP | `http://192.168.64.6:31626` | `admin` / `change-me` |
+| Prometheus | HTTP | `http://192.168.64.6:32176` | — |
+| Alertmanager | HTTP | `http://192.168.64.6:32227` | — |
 
 See [docs/accessing-services.md](docs/accessing-services.md) for port discovery and alternatives.
 
