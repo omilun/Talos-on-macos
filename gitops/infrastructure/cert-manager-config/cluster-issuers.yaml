@@ -1,0 +1,76 @@
+# infrastructure/cert-manager/cluster-issuers.yaml
+# Two ClusterIssuers:
+#   selfsigned-issuer  — bootstrapping issuer (no external dependency)
+#   ca-issuer          — issues all cluster certificates from a self-signed root CA
+#
+# For Let's Encrypt production:
+#   1. Change the acme-staging issuer server URL to the prod endpoint
+#   2. Ensure your domain resolves and HTTP-01 challenge is reachable
+#   3. Reference 'letsencrypt-prod' in Certificate resources
+---
+# Step 1: bootstrap — creates the root CA key pair
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  selfSigned: {}
+---
+# Step 2: self-signed root CA Certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: root-ca
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  isCA: true
+  commonName: "tart-lab Root CA"
+  subject:
+    organizations:
+      - tart-lab
+  secretName: root-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  duration: 87600h   # 10 years
+---
+# Step 3: CA-backed ClusterIssuer — used by all other certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ca-issuer
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  ca:
+    secretName: root-ca-secret
+---
+# Optional: Let's Encrypt staging (safe for testing, not trusted by browsers)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  acme:
+    # Replace with your email for expiry notifications
+    email: omilun@users.noreply.github.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: main-gateway
+                namespace: networking
+                sectionName: http

@@ -1,0 +1,31 @@
+# infrastructure/cert-manager/wildcard-cert.yaml
+# Wildcard certificate for *.local used by the shared main-gateway HTTPS listener.
+# Issued by ca-issuer (self-signed root CA).
+#
+# To trust this certificate on macOS:
+#   kubectl get secret root-ca-secret -n cert-manager \
+#     -o jsonpath='{.data.tls\.crt}' | base64 -d > root-ca.crt
+#   sudo security add-trusted-cert -d -r trustRoot \
+#     -k /Library/Keychains/System.keychain root-ca.crt
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-local
+  namespace: networking
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  secretName: wildcard-tls
+  commonName: "*.local"
+  dnsNames:
+    - "*.local"
+    - "argocd.local"
+    - "grafana.local"
+    - "prometheus.local"
+    - "alertmanager.local"
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  duration: 8760h    # 1 year
+  renewBefore: 720h  # renew 30d before expiry

@@ -14,3 +14,4 @@ bootstrap/terraform/.terraform.lock.hcl
 # Secrets — never commit
 *.pem
 *.key
+nvram-arm64.bin

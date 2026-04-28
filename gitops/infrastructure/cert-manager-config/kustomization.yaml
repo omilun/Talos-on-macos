@@ -1,0 +1,6 @@
+# Applied after infrastructure Kustomization (cert-manager HelmRelease must be ready)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cluster-issuers.yaml
+  - wildcard-cert.yaml

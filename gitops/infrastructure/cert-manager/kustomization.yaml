@@ -1,8 +1,9 @@
 # infrastructure/cert-manager/kustomization.yaml
+# Installs cert-manager HelmRelease only.
+# ClusterIssuers and wildcard-cert are applied via infrastructure-config
+# Kustomization (which dependsOn this infrastructure layer being ready).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
   - helmrelease.yaml
-  - cluster-issuers.yaml
-  - wildcard-cert.yaml
