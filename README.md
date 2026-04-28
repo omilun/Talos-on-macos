@@ -419,42 +419,56 @@ flux get all -A --watch
 
 ### 6 — Access the UIs
 
-Services are exposed as **NodePort** services on your cluster nodes. The primary control-plane node is:
+#### Option A: HTTPS with Hostnames (Recommended)
+
+For clean HTTPS access via `argocd.local` (no IP addresses), run:
 
 ```bash
-# Find the primary node IP
+./setup-dnsmasq.sh
+```
+
+This one-time setup (~5 min) configures:
+- dnsmasq for local DNS (macOS standard)
+- Wildcard DNS resolution for `*.local` domains
+- Trusted self-signed CA in macOS Keychain
+- No browser TLS warnings
+
+Then access services:
+
+```bash
+open https://argocd.local:32232
+open https://grafana.local:31626
+open https://prometheus.local:32176
+open https://alertmanager.local:32227
+```
+
+Credentials:
+- **ArgoCD**: `admin` / `rQwuRbjDeHtXkImn`
+- **Grafana**: `admin` / `change-me`
+
+See [docs/dns-tls-setup.md](docs/dns-tls-setup.md) for details and troubleshooting.
+
+#### Option B: Direct IP + NodePort (No setup required)
+
+Services are exposed as **NodePort** services. Access directly:
+
+```bash
+# Find your primary node IP
 kubectl get nodes -o wide | grep control-plane | head -1
 # Output: talos-jy0-m74   Ready    control-plane   ...   192.168.64.6
+
+# Get service NodePorts
+kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.ports[0].nodePort}'
 ```
 
-Get the NodePort for each service:
+| Service | URL | Credentials |
+|---------|-----|-----------|
+| ArgoCD | `http://192.168.64.6:32232` | `admin` / `rQwuRbjDeHtXkImn` |
+| Grafana | `http://192.168.64.6:31626` | `admin` / `change-me` |
+| Prometheus | `http://192.168.64.6:32176` | — |
+| Alertmanager | `http://192.168.64.6:32227` | — |
 
-```bash
-# ArgoCD HTTPS port
-kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
-# Output: 31223
-
-# Grafana port
-kubectl get svc prometheus-grafana -n monitoring -o jsonpath='{.spec.ports[0].nodePort}'
-
-# Prometheus port  
-kubectl get svc kube-prometheus-stack-prometheus -n monitoring -o jsonpath='{.spec.ports[0].nodePort}'
-```
-
-| Service | URL | Default credentials |
-|---------|-----|-------------------|
-| ArgoCD | `http://192.168.64.6:<NODEPORT>` | `admin` / see note below |
-| Grafana | `http://192.168.64.6:<NODEPORT>` | `admin` / `change-me` |
-| Prometheus | `http://192.168.64.6:<NODEPORT>` | — |
-| Alertmanager | `http://192.168.64.6:<NODEPORT>` | — |
-
-> **ArgoCD password** (auto-generated on first install):
-> ```bash
-> kubectl get secret argocd-initial-admin-secret -n argocd \
->   -o jsonpath='{.data.password}' | base64 -d
-> ```
-
-> **Why NodePort?** Tart's virtual network topology has limitations with Cilium's LoadBalancer implementation. NodePort is the most reliable method for accessing services. See [docs/accessing-services.md](docs/accessing-services.md) for more details and alternative access methods.
+See [docs/accessing-services.md](docs/accessing-services.md) for port discovery and alternatives.
 
 ---
 
