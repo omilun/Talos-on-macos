@@ -23,7 +23,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: flux
 spec:
-  cidrs:
+  blocks:
     - cidr: "192.168.64.200/28"
 ---
 apiVersion: cilium.io/v2alpha1
