@@ -11,17 +11,39 @@
 
 ---
 
-## What is this?
+## Overview
 
-This project gives you a **real Kubernetes cluster** on your MacBook — no cloud, no Docker Desktop, no kind. It's a 6-node HA cluster (3 control-plane + 3 workers) running [Talos Linux](https://talos.dev) inside [Tart](https://tart.run) VMs, with a complete platform stack wired together and managed as code.
+This project automates provisioning of **production-like Kubernetes clusters** on macOS Apple Silicon using Talos, Tart VMs, and infrastructure-as-code. It supports **multi-cluster deployments** with different Kubernetes versions, making it ideal for testing upgrades, running isolated workloads, or exploring Kubernetes at scale.
 
-**One command** provisions everything:
+**One command** provisions a complete cluster:
 
-```
+```bash
+cd clusters/cluster1/bootstrap/terraform
 tofu apply
 ```
 
-That single command: creates 6 VMs → installs Talos → bootstraps etcd → installs Cilium → applies Gateway API CRDs → bootstraps Flux, which then installs cert-manager, ArgoCD, Prometheus, Grafana, Loki, and Promtail — all in the right order, fully declarative.
+This creates: 6 VMs (3 control-plane + 3 workers) → Talos Linux → Cilium CNI → Gateway API → Flux bootstrap, which then installs cert-manager, ArgoCD, Prometheus, Grafana, Loki, and Promtail.
+
+---
+
+## Project Structure
+
+```
+.
+├── clusters/                           # Multi-cluster configurations
+│   ├── cluster1/                       # Your primary cluster
+│   │   ├── bootstrap/terraform/        # Day 0–1 provisioning
+│   │   ├── gitops/                     # Day 2+ GitOps manifests
+│   │   └── k8s-v1.32/                  # Kubernetes version variant
+│   └── cluster2/                       # Additional clusters (same structure)
+├── docs/                               # Public documentation
+│   ├── architecture.md
+│   ├── getting-started.md
+│   ├── usage.md
+│   └── troubleshooting.md
+├── shared/                             # Shared modules, scripts (future)
+└── README.md                           # This file
+```
 
 ---
 
@@ -124,9 +146,247 @@ cp /path/to/existing/nvram-arm64.bin bootstrap/terraform/
 
 > See [Getting the NVRAM seed](#getting-the-nvram-seed) for how to create one from scratch.
 
-### 4 — Configure
+---
+
+## Quick Start
+
+### 1 — Fork or clone this repo
 
 ```bash
+git clone https://github.com/omilun/Talos-on-macos.git
+cd Talos-on-macos
+```
+
+### 2 — Choose a cluster
+
+```bash
+cd clusters/cluster1
+```
+
+(See [Adding Clusters](#adding-clusters) to create additional clusters or variants.)
+
+### 3 — Prerequisites
+
+Follow [docs/getting-started.md](docs/getting-started.md) to:
+- Install required tools (Tart, OpenTofu, talosctl, kubectl, Flux)
+- Download the Talos disk image from [factory.talos.dev](https://factory.talos.dev)
+- Extract or create the NVRAM seed file
+
+### 4 — Configure and Deploy
+
+```bash
+cd bootstrap/terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your settings
+tofu apply
+```
+
+For detailed walkthrough, see [docs/getting-started.md](docs/getting-started.md).
+
+---
+
+## Documentation
+
+- **[docs/getting-started.md](docs/getting-started.md)** — Installation, prerequisites, and step-by-step guide
+- **[docs/architecture.md](docs/architecture.md)** — Design decisions, two-layer provisioning model, platform stack details
+- **[docs/usage.md](docs/usage.md)** — Accessing services, managing workloads, common operations
+- **[docs/troubleshooting.md](docs/troubleshooting.md)** — Common issues and solutions
+- **[clusters/cluster1/bootstrap/terraform/README.md](clusters/cluster1/bootstrap/terraform/README.md)** — Terraform module reference
+- **[clusters/cluster1/gitops/README.md](clusters/cluster1/gitops/README.md)** — GitOps structure and adding applications
+
+---
+
+## Multi-Cluster Setup
+
+This repo supports multiple independent clusters and Kubernetes versions.
+
+### Directory Structure
+
+Each cluster is self-contained:
+
+```
+clusters/
+├── cluster1/
+│   ├── bootstrap/terraform/     # Day 0–1 (VMs, Talos, bootstrap)
+│   ├── gitops/                  # Day 2+ (apps, monitoring, logging)
+│   └── k8s-v1.32/              # Optional: v1.32-specific overrides
+└── cluster2/                    # Another cluster (same structure)
+```
+
+### Adding Clusters
+
+To add a new cluster:
+
+```bash
+# Copy from an existing cluster
+cp -r clusters/cluster1 clusters/cluster2
+
+# Update cluster name in your variables
+cd clusters/cluster2/bootstrap/terraform
+# Edit terraform.tfvars, change cluster_name to "cluster2"
+tofu apply
+```
+
+To add a Kubernetes version variant:
+
+```bash
+mkdir -p clusters/cluster1/k8s-v1.32
+# Configure overrides in this directory (e.g., Talos patch for v1.32)
+```
+
+See [docs/usage.md](docs/usage.md) for managing multiple clusters.
+
+---
+
+## Architecture
+
+### High-Level Design
+
+```
+macOS Apple Silicon
+│
+└─ Tart (lightweight ARM64 VMs)
+   ├─ talos-cp1  ─┐
+   ├─ talos-cp2  ─┼─ HA control-plane (VIP: 192.168.64.100)
+   ├─ talos-cp3  ─┘
+   ├─ talos-w1   ─┐
+   ├─ talos-w2   ─┼─ workers
+   └─ talos-w3   ─┘
+      │
+      └─ Kubernetes platform (Flux-managed)
+         ├─ Cilium v1.19          CNI + kube-proxy replacement + Gateway API
+         ├─ Gateway API           HTTPRoutes → cilium class
+         ├─ cert-manager          self-signed wildcard TLS
+         ├─ ArgoCD                app delivery
+         ├─ Prometheus            metrics
+         ├─ Grafana               dashboards
+         └─ Loki + Promtail       log aggregation
+```
+
+### Two-Layer Provisioning
+
+| Layer | Tool | Responsibility |
+|-------|------|---------------|
+| **Day 0–1** | OpenTofu | VMs, Talos, Cilium, Gateway API, Flux bootstrap |
+| **Day 2+** | Flux GitOps | Apps, helm releases, monitoring, logging |
+
+See [docs/architecture.md](docs/architecture.md) for in-depth details.
+
+---
+
+## Common Tasks
+
+### Access the cluster
+
+```bash
+export KUBECONFIG=_out/kubeconfig.yaml
+kubectl get nodes
+```
+
+### View ArgoCD UI
+
+```bash
+kubectl port-forward -n argocd svc/argocd-server 8080:443
+# https://localhost:8080 (user: admin, get password from git or secret)
+```
+
+### View Prometheus/Grafana
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+kubectl port-forward -n monitoring svc/grafana 3000:3000
+```
+
+### Destroy a cluster
+
+```bash
+cd clusters/cluster1/bootstrap/terraform
+tofu destroy
+```
+
+See [docs/usage.md](docs/usage.md) for more.
+
+---
+
+## Customization
+
+### Talos Configuration
+
+Edit `clusters/cluster1/bootstrap/terraform/terraform.tfvars` to customize:
+- Cluster name
+- VM count and sizing
+- Talos patches (kernel parameters, sysctls, etc.)
+- Cilium settings
+- Flux repository URL
+
+See [clusters/cluster1/bootstrap/terraform/README.md](clusters/cluster1/bootstrap/terraform/README.md) for all options.
+
+### GitOps Applications
+
+Add services by creating new Kustomizations or HelmReleases in `clusters/cluster1/gitops/`.
+
+See [clusters/cluster1/gitops/README.md](clusters/cluster1/gitops/README.md) for structure and examples.
+
+---
+
+## Troubleshooting
+
+Common issues and solutions are documented in [docs/troubleshooting.md](docs/troubleshooting.md).
+
+Key problem areas:
+- **ARP-based IP discovery failures** — VMs may need restart after initial provisioning
+- **HelmRelease CRD ordering** — cert-manager CRDs must install before ClusterIssuers
+- **Loki OOM** — requires writable `/var/loki` emptyDir on read-only root FS
+- **PodSecurity failures** — platform stack components may need baseline exceptions
+
+---
+
+## Contributing
+
+Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Git workflow and branch naming
+- PR conventions
+- Testing and verification
+
+---
+
+## License
+
+[MIT](LICENSE) — Open source and free for personal and commercial use.
+
+---
+
+## Resources
+
+- [Talos Docs](https://www.talos.dev/v1.13/introduction/)
+- [Tart Docs](https://tart.run/)
+- [OpenTofu Docs](https://opentofu.org/docs/)
+- [Flux Docs](https://fluxcd.io/flux/)
+- [Cilium Docs](https://docs.cilium.io/)
+
+---
+
+## Getting the NVRAM Seed
+
+Tart requires an UEFI NVRAM seed file to boot arm64 VMs. You can:
+
+1. **Extract from an existing Tart VM** (easiest)
+   ```bash
+   cp ~/.tart/vms/<vm-name>/nvram ~/.tart/nvram-arm64.bin
+   cp ~/.tart/nvram-arm64.bin clusters/cluster1/nvram-arm64.bin
+   ```
+
+2. **Copy from another project that has it**
+   ```bash
+   cp /path/to/another/project/nvram-arm64.bin clusters/cluster1/
+   ```
+
+3. **Create from scratch** (requires a Talos installation)
+   - See [Tart documentation](https://tart.run/) for detailed instructions
+
+---
+
+**Happy clustering!** 🚀```bash
 cd bootstrap/terraform
 cp terraform.tfvars.example terraform.tfvars
 ```
