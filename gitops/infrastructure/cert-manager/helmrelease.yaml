@@ -29,9 +29,6 @@ spec:
   values:
     crds:
       enabled: true
-    # Talos: no hostNetwork needed; cert-manager runs fine in-cluster
     global:
       leaderElection:
         namespace: cert-manager
-    # Reduce log verbosity in dev
-    logLevel: 1
