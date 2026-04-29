@@ -59,5 +59,6 @@ sudo rm -f /etc/resolver/talos-on-macos.com && sudo dscacheutil -flushcache
 
 - [Getting started](docs/getting-started.md) — prerequisites, configuration, first deploy
 - [Architecture](docs/architecture.md) — how the pieces fit together
+- [Node pools](docs/node-pools.md) — CP as worker, tainted pools, infra nodes, recipes
 - [Multi-cluster](docs/multi-cluster.md) — running multiple named clusters side by side
 - [Troubleshooting](docs/troubleshooting.md) — common issues and fixes

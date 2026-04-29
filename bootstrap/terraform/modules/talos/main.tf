@@ -69,11 +69,12 @@ data "talos_machine_configuration" "controlplane" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
+  config_patches = compact([
     var.common_patch,
     var.cp_patch,
     local.installer_patch,
-  ]
+    var.allow_scheduling_on_cp_patch,
+  ])
 }
 
 data "talos_machine_configuration" "worker" {

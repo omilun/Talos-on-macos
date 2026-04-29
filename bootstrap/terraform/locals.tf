@@ -58,6 +58,12 @@ locals {
     )
   }
 
+  # Cluster-level patch that removes the node-role.kubernetes.io/control-plane
+  # taint from all CP nodes, allowing normal workloads to be scheduled there.
+  # Empty string when disabled so compact() drops it in the module.
+  allow_scheduling_patch = var.allow_scheduling_on_controlplane ? yamlencode({
+    cluster = { allowSchedulingOnControlPlane = true }
+  }) : ""
   # Patch file contents are read at plan time and passed as strings to the talos
   # module so the module itself has no file-system dependencies.
   patches_dir = "${path.root}/../../patches"

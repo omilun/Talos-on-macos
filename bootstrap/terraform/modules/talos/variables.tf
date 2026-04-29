@@ -59,6 +59,12 @@ variable "node_extra_patches" {
   default     = {}
 }
 
+variable "allow_scheduling_on_cp_patch" {
+  description = "YAML patch that sets cluster.allowSchedulingOnControlPlane=true. Pass empty string to keep the default CP taint."
+  type        = string
+  default     = ""
+}
+
 variable "out_dir" {
   description = "Directory where kubeconfig.yaml and talosconfig are written."
   type        = string

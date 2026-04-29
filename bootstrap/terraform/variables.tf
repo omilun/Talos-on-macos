@@ -169,6 +169,12 @@ variable "node_pools" {
   }
 }
 
+variable "allow_scheduling_on_controlplane" {
+  description = "When true, removes the node-role.kubernetes.io/control-plane:NoSchedule taint from all CP nodes so normal workloads can be scheduled there. Required for single-node setups and useful for homelab clusters where you want CPs to also run workloads."
+  type        = bool
+  default     = false
+}
+
 # ── Output paths ──────────────────────────────────────────────────────────────
 
 variable "out_dir" {

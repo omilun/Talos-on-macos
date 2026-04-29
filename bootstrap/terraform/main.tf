@@ -48,9 +48,10 @@ module "talos" {
   talos_vip          = var.talos_vip
   tart_gateway       = var.tart_bridge_gateway
 
-  node_ips           = module.vms.node_ips
-  cp_node_names      = local.cp_node_names
-  node_extra_patches = local.label_taint_patches
+  node_ips                     = module.vms.node_ips
+  cp_node_names                = local.cp_node_names
+  node_extra_patches           = local.label_taint_patches
+  allow_scheduling_on_cp_patch = local.allow_scheduling_patch
 
   common_patch = local.common_patch
   cp_patch     = local.cp_patch
