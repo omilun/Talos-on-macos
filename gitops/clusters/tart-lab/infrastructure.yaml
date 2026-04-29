@@ -40,22 +40,4 @@ spec:
   timeout: 10m
   dependsOn:
     - name: infrastructure
----
-# apps layer — Flux creates ArgoCD AppProject + Application resources.
-# ArgoCD then takes over and syncs the actual app workloads from their own repos.
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: apps
-  namespace: flux-system
-spec:
-  interval: 10m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: ./gitops/apps
-  prune: true
-  wait: false
-  timeout: 5m
-  dependsOn:
-    - name: infrastructure
+

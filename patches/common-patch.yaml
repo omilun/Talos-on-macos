@@ -10,6 +10,10 @@ cluster:
       name: none            # Disable Talos-managed Flannel; Cilium installed post-bootstrap
 
 machine:
+  network:
+    nameservers:
+      - 8.8.8.8
+      - 1.1.1.1
   kubelet:
     extraArgs:
       rotate-server-certificates: "true"
