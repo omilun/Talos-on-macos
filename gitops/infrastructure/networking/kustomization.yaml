@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - cilium-resources.yaml
-  - gateway.yaml
   - external-dns.yaml
