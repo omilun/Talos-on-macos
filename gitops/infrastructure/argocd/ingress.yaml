@@ -11,13 +11,12 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: flux
   annotations:
-    cert-manager.io/cluster-issuer: selfsigned-issuer
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
   rules:
-  - host: argocd.local
+  - host: argocd.talos-tart-ha.talos-on-macos.com
     http:
       paths:
       - backend:
@@ -29,5 +28,5 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - argocd.local
-    secretName: argocd-tls
+    - argocd.talos-tart-ha.talos-on-macos.com
+    secretName: wildcard-cluster-tls

@@ -1,12 +1,18 @@
 # external-dns.yaml
-# In-cluster CoreDNS that resolves *.local service hostnames to the
+# In-cluster CoreDNS that resolves service hostnames to the
 # nginx ingress controller IP (192.168.64.10 — hostNetwork node).
 #
-# macOS one-time setup:
-#   sudo mkdir -p /etc/resolver
-#   printf "nameserver 192.168.64.6\nport 30053\n" | sudo tee /etc/resolver/local
+# Domain pattern: <service>.<cluster>.<repo>.com
+#   Cluster: talos-tart-ha
+#   Repo:    talos-on-macos
+#   Example: argocd.talos-tart-ha.talos-on-macos.com
 #
-# After that: curl https://argocd.local works with no /etc/hosts entries.
+# macOS one-time setup (no /etc/hosts, no mDNS conflicts):
+#   sudo mkdir -p /etc/resolver
+#   printf "nameserver 192.168.64.7\nport 30053\n" | sudo tee /etc/resolver/talos-on-macos.com
+#   sudo dscacheutil -flushcache
+#
+# After that: curl https://argocd.talos-tart-ha.talos-on-macos.com works.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -17,29 +23,29 @@ metadata:
     app.kubernetes.io/managed-by: flux
 data:
   Corefile: |
-    .:53 {
+    talos-on-macos.com:53 {
         errors
         health {
             lameduck 5s
         }
         ready
-
         hosts {
-            192.168.64.10 argocd.local
-            192.168.64.10 grafana.local
-            192.168.64.10 prometheus.local
-            192.168.64.10 alertmanager.local
-            192.168.64.10 loki.local
-            ttl 60
-            reload 15s
+            192.168.64.10 argocd.talos-tart-ha.talos-on-macos.com
+            192.168.64.10 grafana.talos-tart-ha.talos-on-macos.com
+            192.168.64.10 prometheus.talos-tart-ha.talos-on-macos.com
+            192.168.64.10 alertmanager.talos-tart-ha.talos-on-macos.com
+            192.168.64.10 loki.talos-tart-ha.talos-on-macos.com
+            192.168.64.10 talos-tart-ha.talos-on-macos.com
             fallthrough
         }
-
-        forward . 8.8.8.8 1.1.1.1
-        cache 300
-        loop
+        forward . /etc/resolv.conf
+        cache 30
         reload
-        loadbalance
+        log
+    }
+    .:53 {
+        forward . /etc/resolv.conf
+        cache 30
     }
 ---
 apiVersion: apps/v1

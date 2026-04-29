@@ -1,7 +1,7 @@
 # ingress.yaml
 # Kubernetes Ingress resources for monitoring services.
-# Routes hostname-based traffic through the nginx ingress controller.
-# No ports in URLs — standard 80/443 only.
+# Domain pattern: <service>.talos-tart-ha.talos-on-macos.com
+# TLS via shared wildcard cert (wildcard-cluster-tls in networking ns, copied to monitoring).
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -10,12 +10,10 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
-  annotations:
-    cert-manager.io/cluster-issuer: selfsigned-issuer
 spec:
   ingressClassName: nginx
   rules:
-  - host: grafana.local
+  - host: grafana.talos-tart-ha.talos-on-macos.com
     http:
       paths:
       - backend:
@@ -27,8 +25,8 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - grafana.local
-    secretName: grafana-tls
+    - grafana.talos-tart-ha.talos-on-macos.com
+    secretName: wildcard-cluster-tls
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -37,12 +35,10 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
-  annotations:
-    cert-manager.io/cluster-issuer: selfsigned-issuer
 spec:
   ingressClassName: nginx
   rules:
-  - host: prometheus.local
+  - host: prometheus.talos-tart-ha.talos-on-macos.com
     http:
       paths:
       - backend:
@@ -54,8 +50,8 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - prometheus.local
-    secretName: prometheus-tls
+    - prometheus.talos-tart-ha.talos-on-macos.com
+    secretName: wildcard-cluster-tls
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -64,12 +60,10 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
-  annotations:
-    cert-manager.io/cluster-issuer: selfsigned-issuer
 spec:
   ingressClassName: nginx
   rules:
-  - host: alertmanager.local
+  - host: alertmanager.talos-tart-ha.talos-on-macos.com
     http:
       paths:
       - backend:
@@ -81,8 +75,8 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - alertmanager.local
-    secretName: alertmanager-tls
+    - alertmanager.talos-tart-ha.talos-on-macos.com
+    secretName: wildcard-cluster-tls
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -91,12 +85,10 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
-  annotations:
-    cert-manager.io/cluster-issuer: selfsigned-issuer
 spec:
   ingressClassName: nginx
   rules:
-  - host: loki.local
+  - host: loki.talos-tart-ha.talos-on-macos.com
     http:
       paths:
       - backend:
@@ -108,5 +100,5 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - loki.local
-    secretName: loki-tls
+    - loki.talos-tart-ha.talos-on-macos.com
+    secretName: wildcard-cluster-tls

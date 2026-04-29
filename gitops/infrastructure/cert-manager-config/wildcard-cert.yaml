@@ -1,28 +1,26 @@
 # infrastructure/cert-manager/wildcard-cert.yaml
-# Wildcard certificate for *.local used by the shared main-gateway HTTPS listener.
-# Issued by ca-issuer (self-signed root CA).
+# Wildcard certificate for *.talos-tart-ha.talos-on-macos.com
+# Domain pattern: <service>.<cluster>.<repo>.com
+# Issued by ca-issuer (self-signed root CA, trusted on macOS via Keychain).
 #
-# To trust this certificate on macOS:
+# To trust this certificate on macOS (one-time):
 #   kubectl get secret root-ca-secret -n cert-manager \
-#     -o jsonpath='{.data.tls\.crt}' | base64 -d > root-ca.crt
+#     -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/root-ca.crt
 #   sudo security add-trusted-cert -d -r trustRoot \
-#     -k /Library/Keychains/System.keychain root-ca.crt
+#     -k /Library/Keychains/System.keychain /tmp/root-ca.crt
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-local
+  name: wildcard-cluster-tls
   namespace: networking
   labels:
     app.kubernetes.io/managed-by: flux
 spec:
-  secretName: wildcard-tls
-  commonName: "*.local"
+  secretName: wildcard-cluster-tls
+  commonName: "*.talos-tart-ha.talos-on-macos.com"
   dnsNames:
-    - "*.local"
-    - "argocd.local"
-    - "grafana.local"
-    - "prometheus.local"
-    - "alertmanager.local"
+    - "*.talos-tart-ha.talos-on-macos.com"
+    - "talos-tart-ha.talos-on-macos.com"
   issuerRef:
     name: ca-issuer
     kind: ClusterIssuer
