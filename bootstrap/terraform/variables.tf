@@ -84,51 +84,88 @@ variable "disk_size_gb" {
   }
 }
 
-# ── Control-plane VM sizing ───────────────────────────────────────────────────
+# ── Node pools ────────────────────────────────────────────────────────────────
+# Declare any number of pools. Each pool expands into `count` VMs.
+# All commits from the same pool share CPU/memory/labels/taints.
+#
+# Example — 3 CP + 3 general workers + 2 high-memory workers:
+#
+#   node_pools = [
+#     { name = "cp",      role = "controlplane", count = 3, cpu = 4, memory_gb = 4 },
+#     { name = "worker",  role = "worker",        count = 3, cpu = 2, memory_gb = 4 },
+#     { name = "fat",     role = "worker",        count = 2, cpu = 4, memory_gb = 8,
+#       labels = { "tier" = "high-mem" },
+#       taints = [{ key = "tier", value = "high-mem", effect = "NoSchedule" }] },
+#   ]
+#
+# Generated VM names: <pool.name>-1, <pool.name>-2, …
+# Generated MACs:     c6:21:11:aa:<pool_idx>:<node_idx> (deterministic, 1-based)
 
-variable "cp_cpu" {
-  description = "Number of vCPUs for each control-plane node."
-  type        = number
-  default     = 2
+variable "node_pools" {
+  description = "List of node pool definitions. Each pool generates `count` VMs with identical resources, Kubernetes labels, and taints."
+  type = list(object({
+    name      = string
+    role      = string  # "controlplane" or "worker"
+    count     = number
+    cpu       = number
+    memory_gb = number
+    labels    = optional(map(string), {})
+    taints = optional(list(object({
+      key    = string
+      value  = string  # taint value (can be empty "")
+      effect = string  # NoSchedule | PreferNoSchedule | NoExecute
+    })), [])
+  }))
+
+  default = [
+    {
+      name      = "cp"
+      role      = "controlplane"
+      count     = 3
+      cpu       = 2
+      memory_gb = 4
+    },
+    {
+      name      = "worker"
+      role      = "worker"
+      count     = 3
+      cpu       = 2
+      memory_gb = 4
+    },
+  ]
 
   validation {
-    condition     = var.cp_cpu >= 2
-    error_message = "cp_cpu must be at least 2 (Talos control-plane recommendation)."
+    condition = alltrue([
+      for pool in var.node_pools :
+      contains(["controlplane", "worker"], pool.role)
+    ])
+    error_message = "Each pool role must be 'controlplane' or 'worker'."
   }
-}
-
-variable "cp_memory_gb" {
-  description = "RAM in GiB for each control-plane node."
-  type        = number
-  default     = 4
 
   validation {
-    condition     = var.cp_memory_gb >= 2
-    error_message = "cp_memory_gb must be at least 2 GiB."
+    condition = alltrue([
+      for pool in var.node_pools : pool.count >= 1
+    ])
+    error_message = "Each pool must have count >= 1."
   }
-}
-
-# ── Worker VM sizing ──────────────────────────────────────────────────────────
-
-variable "worker_cpu" {
-  description = "Number of vCPUs for each worker node."
-  type        = number
-  default     = 2
 
   validation {
-    condition     = var.worker_cpu >= 1
-    error_message = "worker_cpu must be at least 1."
+    condition = alltrue([
+      for pool in var.node_pools : pool.cpu >= 1
+    ])
+    error_message = "Each pool must have cpu >= 1."
   }
-}
-
-variable "worker_memory_gb" {
-  description = "RAM in GiB for each worker node."
-  type        = number
-  default     = 2
 
   validation {
-    condition     = var.worker_memory_gb >= 2
-    error_message = "worker_memory_gb must be at least 2 GiB."
+    condition = alltrue([
+      for pool in var.node_pools : pool.memory_gb >= 2
+    ])
+    error_message = "Each pool must have memory_gb >= 2."
+  }
+
+  validation {
+    condition = length([for p in var.node_pools : p if p.role == "controlplane"]) >= 1
+    error_message = "At least one controlplane pool is required."
   }
 }
 

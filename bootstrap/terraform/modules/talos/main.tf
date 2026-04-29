@@ -108,8 +108,12 @@ resource "talos_machine_configuration_apply" "nodes" {
   node     = each.value
   endpoint = each.value
 
-  # Inject the per-node route patch on top of the shared machine config.
-  config_patches = [local.route_patches[each.key]]
+  # Inject the per-node route patch + optional label/taint patch on top of
+  # the shared machine config. compact() drops any empty strings.
+  config_patches = compact([
+    local.route_patches[each.key],
+    lookup(var.node_extra_patches, each.key, ""),
+  ])
 
   timeouts = {
     create = "5m"

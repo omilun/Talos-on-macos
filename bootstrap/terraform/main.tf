@@ -30,7 +30,7 @@ resource "null_resource" "talos_image" {
 module "vms" {
   source = "./modules/tart-vms"
 
-  nodes        = local.nodes
+  nodes        = local.vm_nodes
   image_path   = local.image_path_abs
   disk_size_gb = var.disk_size_gb
   nvram_src    = local.nvram_src
@@ -48,8 +48,9 @@ module "talos" {
   talos_vip          = var.talos_vip
   tart_gateway       = var.tart_bridge_gateway
 
-  node_ips      = module.vms.node_ips
-  cp_node_names = local.cp_node_names
+  node_ips           = module.vms.node_ips
+  cp_node_names      = local.cp_node_names
+  node_extra_patches = local.label_taint_patches
 
   common_patch = local.common_patch
   cp_patch     = local.cp_patch

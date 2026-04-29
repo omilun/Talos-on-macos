@@ -53,6 +53,12 @@ variable "worker_patch" {
   type        = string
 }
 
+variable "node_extra_patches" {
+  description = "Map of node name to an optional extra YAML machine-config patch (e.g. nodeLabels, nodeTaints). Pass empty string for nodes with no extras."
+  type        = map(string)
+  default     = {}
+}
+
 variable "out_dir" {
   description = "Directory where kubeconfig.yaml and talosconfig are written."
   type        = string
