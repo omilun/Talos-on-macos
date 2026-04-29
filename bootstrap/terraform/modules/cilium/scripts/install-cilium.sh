@@ -90,3 +90,12 @@ kubectl rollout status deployment/cilium-operator -n kube-system --timeout=3m
 
 ok "Cilium $version installed and ready"
 kubectl get pods -n kube-system -l k8s-app=cilium --no-headers >&2
+
+# ── Restart operator to ensure Gateway API CRDs are watched ──────────────────
+# The Gateway API CRDs are installed in a separate step (gateway_api module).
+# If Cilium started before those CRDs existed, the operator won't be watching
+# them. A single restart is cheap and guarantees GatewayClass/Gateway reconcile.
+log "Restarting Cilium operator to pick up Gateway API CRDs..."
+kubectl rollout restart deployment/cilium-operator -n kube-system
+kubectl rollout status  deployment/cilium-operator -n kube-system --timeout=3m
+ok "Cilium operator restarted — Gateway API controller active"
