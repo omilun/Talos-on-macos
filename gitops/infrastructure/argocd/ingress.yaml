@@ -11,7 +11,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: flux
   annotations:
-    cert-manager.io/cluster-issuer: ca-issuer
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
@@ -31,3 +30,24 @@ spec:
   - hosts:
     - argocd.talos-tart-ha.talos-on-macos.com
     secretName: wildcard-cluster-tls
+---
+# Wildcard certificate for *.talos-tart-ha.talos-on-macos.com in argocd namespace.
+# Explicit resource (not ingress-shim annotation) so SANs can cover all services.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cluster-tls
+  namespace: argocd
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  secretName: wildcard-cluster-tls
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+  commonName: "*.talos-tart-ha.talos-on-macos.com"
+  dnsNames:
+  - "*.talos-tart-ha.talos-on-macos.com"
+  - "argocd.talos-tart-ha.talos-on-macos.com"
+  duration: 8760h
+  renewBefore: 720h
