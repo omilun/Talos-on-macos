@@ -10,6 +10,8 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
 spec:
   ingressClassName: nginx
   rules:
@@ -35,6 +37,8 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
 spec:
   ingressClassName: nginx
   rules:
@@ -60,6 +64,8 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
 spec:
   ingressClassName: nginx
   rules:
@@ -85,6 +91,8 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/managed-by: flux
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
 spec:
   ingressClassName: nginx
   rules:

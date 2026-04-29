@@ -8,5 +8,6 @@ resources:
   - sources
   - networking
   - cert-manager
+  - ingress-nginx
   - argocd
   - monitoring
