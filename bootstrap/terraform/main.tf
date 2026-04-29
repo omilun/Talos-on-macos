@@ -66,3 +66,37 @@ module "flux" {
 
   depends_on = [module.gateway_api]
 }
+
+# ── macOS host setup (DNS resolver + CA trust) ────────────────────────────────
+# Runs once after Flux bootstraps the cluster and cert-manager issues the CA.
+# Idempotent: safe to re-run (trust-ca.sh and setup-dns.sh both check state).
+#
+# Skip on non-macOS or in CI: set var.skip_macos_setup = true
+resource "null_resource" "macos_setup" {
+  count = var.skip_macos_setup ? 0 : 1
+
+  triggers = {
+    # Re-run if cluster name or kubeconfig changes
+    cluster_name    = var.cluster_name
+    kubeconfig_path = module.talos.kubeconfig_path
+  }
+
+  # Wait for Flux to deploy cert-manager and issue the cluster CA
+  # (cert-manager typically ready ~2 min after Flux bootstrap)
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for cert-manager CA to be ready..."
+      KUBECONFIG="${module.talos.kubeconfig_path}" \
+        kubectl wait --for=condition=Ready certificate/root-ca \
+        -n cert-manager --timeout=300s 2>/dev/null || \
+        echo "⚠️  cert-manager not ready yet — run setup-dns.sh manually later"
+
+      echo "Configuring macOS DNS and trusting cluster CA..."
+      KUBECONFIG="${module.talos.kubeconfig_path}" \
+        bash "$(dirname "${path.module}")/../../setup-dns.sh" --non-interactive
+    EOT
+    interpreter = ["/bin/bash", "-c"]
+  }
+
+  depends_on = [module.flux]
+}

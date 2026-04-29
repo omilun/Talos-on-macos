@@ -44,16 +44,17 @@ output "flux_hint" {
 }
 
 output "platform_urls" {
-  description = "Service URLs. Add these hostnames to /etc/hosts pointing at the Gateway LoadBalancer IP."
+  description = "Service URLs. Run setup-dns.sh once to configure DNS and CA trust on macOS."
   value = {
-    argocd      = "https://argocd.local"
-    grafana     = "https://grafana.local"
-    prometheus  = "https://prometheus.local"
-    alertmanager = "https://alertmanager.local"
+    argocd       = "https://argocd.talos-tart-ha.talos-on-macos.com"
+    grafana      = "https://grafana.talos-tart-ha.talos-on-macos.com"
+    prometheus   = "https://prometheus.talos-tart-ha.talos-on-macos.com"
+    alertmanager = "https://alertmanager.talos-tart-ha.talos-on-macos.com"
+    loki         = "https://loki.talos-tart-ha.talos-on-macos.com"
   }
 }
 
-output "etc_hosts_hint" {
-  description = "Get the Gateway LB IP, then add these lines to /etc/hosts on macOS."
-  value       = "kubectl get gateway main-gateway -n networking -o jsonpath='{.status.addresses[0].value}' && echo ' argocd.local grafana.local prometheus.local alertmanager.local'"
+output "macos_setup_hint" {
+  description = "One-time macOS setup: configures DNS resolver and trusts the cluster CA."
+  value       = "bash ${path.root}/../../setup-dns.sh"
 }

@@ -179,3 +179,11 @@ variable "flux_github_token" {
   default     = ""
   sensitive   = true
 }
+
+# ── macOS host setup ──────────────────────────────────────────────────────────
+
+variable "skip_macos_setup" {
+  description = "Set to true to skip the macOS DNS resolver and CA trust steps (useful in CI or non-macOS environments)."
+  type        = bool
+  default     = false
+}
