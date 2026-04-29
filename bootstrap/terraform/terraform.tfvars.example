@@ -1,72 +1,31 @@
-# Copy this file to terraform.tfvars and adjust values as needed.
-# Most defaults work out of the box for a macOS Apple Silicon machine with Tart.
-#
-# REQUIRED: set flux_git_repository_url to YOUR fork of this repo.
+# ─────────────────────────────────────────────────────────────────────────────
+# terraform.tfvars  —  copy this file, change the GitHub URL, run tofu apply.
+# This file is gitignored — never committed.
+# ─────────────────────────────────────────────────────────────────────────────
 
-# ── Talos / Kubernetes ────────────────────────────────────────────────────────
+# ❶  Point Flux at YOUR fork of this repo (required)
+flux_git_repository_url = "https://github.com/YOUR_USERNAME/Talos-on-macos"
+
+# ❷  Node pools — adjust CPU/RAM to match your Mac's available resources.
+#    Default below: 6 VMs, ~24 GB RAM, ~18 vCPU total.
+#    See docs/node-pools.md for tainted pools, infra nodes, and more recipes.
+node_pools = [
+  { name = "cp",     role = "controlplane", count = 3, cpu = 2, memory_gb = 4 },
+  { name = "worker", role = "worker",        count = 3, cpu = 2, memory_gb = 4 },
+]
+
+# ❸  Everything below is optional — defaults work on any Apple Silicon Mac.
+
+# cluster_name       = "talos-tart-ha"    # used in kubeconfig context + domain names
 # talos_version      = "v1.13.0"
 # kubernetes_version = "1.35.2"
-# cluster_name       = "talos-tart-ha"
+# disk_size_gb       = 20                 # per VM
+# allow_scheduling_on_controlplane = false  # true = CPs also run workloads
 
-# ── Network ───────────────────────────────────────────────────────────────────
-# talos_vip           = "192.168.64.100"
-# tart_bridge_gateway = "192.168.64.1"
+# Sudo password for /etc/resolver + Keychain trust steps.
+# Leave commented to be prompted once during tofu apply, OR:
+#   export TF_VAR_macos_sudo_password="yourpassword"  (never commit this)
+# macos_sudo_password = ""
 
-# ── VM image ──────────────────────────────────────────────────────────────────
-# image_path       = "~/Downloads/metal-arm64.raw"  # auto-downloaded if absent
-# disk_size_gb     = 20
-
-# ── Node pools ────────────────────────────────────────────────────────────────
-# Define any number of pools. Each pool generates `count` VMs.
-# Labels and taints are applied to the Kubernetes node via Talos machine config.
-#
-# Default: 3 CP + 3 workers (6 VMs total, ~24 GB RAM, ~18 vCPU)
-#
-# node_pools = [
-#   {
-#     name      = "cp"
-#     role      = "controlplane"
-#     count     = 3
-#     cpu       = 2
-#     memory_gb = 4
-#   },
-#   {
-#     name      = "worker"
-#     role      = "worker"
-#     count     = 3
-#     cpu       = 2
-#     memory_gb = 4
-#   },
-# ]
-#
-# Multi-pool example — add a tainted pool for GPU/storage workloads:
-#
-# node_pools = [
-#   { name = "cp",    role = "controlplane", count = 3, cpu = 2, memory_gb = 4 },
-#   { name = "worker",role = "worker",        count = 2, cpu = 2, memory_gb = 4 },
-#   {
-#     name      = "storage"
-#     role      = "worker"
-#     count     = 1
-#     cpu       = 4
-#     memory_gb = 8
-#     labels    = { "node-role" = "storage" }
-#     taints    = [{ key = "node-role", value = "storage", effect = "NoSchedule" }]
-#   },
-# ]
-
-# ── Outputs ───────────────────────────────────────────────────────────────────
-# out_dir = "../../_out"
-
-# ── Gateway API ───────────────────────────────────────────────────────────────
-# gateway_api_version = "v1.2.1"
-
-# ── Flux GitOps ───────────────────────────────────────────────────────────────
-# REQUIRED: point at your fork
-flux_git_repository_url = "https://github.com/YOUR_USERNAME/Talos-on-macos"
-# flux_git_branch         = "main"
-# flux_git_path           = "gitops/clusters/tart-lab"
-#
-# For private repos:
-# flux_github_token = "ghp_..."
-# (or: export TF_VAR_flux_github_token=... — never commit tokens)
+# For private repos only:
+# flux_github_token = ""   # or: export TF_VAR_flux_github_token="ghp_..."
