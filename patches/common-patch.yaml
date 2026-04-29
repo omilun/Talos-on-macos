@@ -17,6 +17,8 @@ machine:
   kubelet:
     extraArgs:
       rotate-server-certificates: "true"
+    extraConfig:
+      serverTLSBootstrap: true
   # Talos-recommended sysctls for Cilium eBPF
   sysctls:
     net.core.bpf_jit_enable: "1"

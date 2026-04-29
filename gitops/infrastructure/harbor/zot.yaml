@@ -19,11 +19,7 @@ data:
       },
       "http": {
         "address": "0.0.0.0",
-        "port": "5000",
-        "tls": {
-          "cert": "/certs/tls.crt",
-          "key": "/certs/tls.key"
-        }
+        "port": "5000"
       },
       "log": {
         "level": "info"
@@ -70,14 +66,12 @@ spec:
               mountPath: /var/lib/registry
             - name: config
               mountPath: /etc/zot
-            - name: tls
-              mountPath: /certs
           args: ["serve", "/etc/zot/config.json"]
           readinessProbe:
             httpGet:
               path: /v2/
               port: 5000
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:
@@ -90,9 +84,6 @@ spec:
         - name: config
           configMap:
             name: zot-config
-        - name: tls
-          secret:
-            secretName: registry-tls
   volumeClaimTemplates:
     - metadata:
         name: data

@@ -29,9 +29,9 @@ spec:
             arguments:
               parameters:
                 - name: context
-                  value: "https://github.com/omilun/pulse.git#main"
-                - name: dockerfile
-                  value: backend/Dockerfile
+                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
+                - name: context_sub_path
+                  value: pulse-main/backend
                 - name: destination
                   value: registry.talos-tart-ha.talos-on-macos.com/pulse/backend:latest
           - name: frontend
@@ -39,9 +39,9 @@ spec:
             arguments:
               parameters:
                 - name: context
-                  value: "https://github.com/omilun/pulse.git#main"
-                - name: dockerfile
-                  value: frontend/Dockerfile
+                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
+                - name: context_sub_path
+                  value: pulse-main/frontend
                 - name: destination
                   value: registry.talos-tart-ha.talos-on-macos.com/pulse/frontend:latest
 
@@ -50,19 +50,18 @@ spec:
       inputs:
         parameters:
           - name: context
-          - name: dockerfile
+          - name: context_sub_path
           - name: destination
       container:
         image: gcr.io/kaniko-project/executor:latest
         args:
           - --context={{inputs.parameters.context}}
-          - --dockerfile={{inputs.parameters.dockerfile}}
+          - --context-sub-path={{inputs.parameters.context_sub_path}}
+          - --dockerfile=Dockerfile
           - --destination={{inputs.parameters.destination}}
-          - --insecure              # Harbor uses self-signed cert
           - --skip-tls-verify
-          - --cache=true
-          - --cache-repo=registry.talos-tart-ha.talos-on-macos.com/pulse/cache
-          - --custom-platform=linux/arm64
+          - --skip-tls-verify-pull
+          - --cache=false
         volumeMounts:
           - name: docker-config
             mountPath: /kaniko/.docker
@@ -71,5 +70,5 @@ spec:
             memory: 512Mi
             cpu: 500m
           limits:
-            memory: 1Gi
+            memory: 2Gi
             cpu: 1000m

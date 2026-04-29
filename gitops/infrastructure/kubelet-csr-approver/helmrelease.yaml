@@ -25,5 +25,7 @@ spec:
         namespace: flux-system
       interval: 24h
   values:
-    providerRegex: "^system:node:talos-.*$"
+    # Regex must match both the username (system:node:talos-xxx) AND the DNS SAN (talos-xxx)
+    # in kubelet serving CSRs, so we use an alternation to handle both formats.
+    providerRegex: "^(system:node:)?talos-.*$"
     bypassDnsResolution: true  # Talos nodes — no reverse DNS needed
