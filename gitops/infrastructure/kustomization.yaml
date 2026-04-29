@@ -10,6 +10,7 @@ resources:
   - cert-manager
   - kubelet-csr-approver
   - cloudnativepg
+  - harbor
   - argo-workflows
   - argocd
   - monitoring

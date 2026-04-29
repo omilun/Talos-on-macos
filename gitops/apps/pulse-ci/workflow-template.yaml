@@ -1,0 +1,75 @@
+# Argo Workflows CI pipeline for pulse app
+# Builds backend + frontend images with Kaniko and pushes to Harbor
+# Trigger: manually or via webhook/cron
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: pulse-build
+  namespace: argo
+spec:
+  entrypoint: build-all
+  serviceAccountName: argo-workflows-sa
+  volumes:
+    - name: docker-config
+      secret:
+        secretName: harbor-registry-secret
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+    - name: workspace
+      emptyDir: {}
+
+  templates:
+    # ─── entry: fan-out backend + frontend in parallel ─────────────────────
+    - name: build-all
+      dag:
+        tasks:
+          - name: backend
+            template: kaniko-build
+            arguments:
+              parameters:
+                - name: context
+                  value: "https://github.com/omilun/pulse.git#main"
+                - name: dockerfile
+                  value: backend/Dockerfile
+                - name: destination
+                  value: harbor.talos-tart-ha.talos-on-macos.com/pulse/backend:latest
+          - name: frontend
+            template: kaniko-build
+            arguments:
+              parameters:
+                - name: context
+                  value: "https://github.com/omilun/pulse.git#main"
+                - name: dockerfile
+                  value: frontend/Dockerfile
+                - name: destination
+                  value: harbor.talos-tart-ha.talos-on-macos.com/pulse/frontend:latest
+
+    # ─── Kaniko build template ─────────────────────────────────────────────
+    - name: kaniko-build
+      inputs:
+        parameters:
+          - name: context
+          - name: dockerfile
+          - name: destination
+      container:
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - --context={{inputs.parameters.context}}
+          - --dockerfile={{inputs.parameters.dockerfile}}
+          - --destination={{inputs.parameters.destination}}
+          - --insecure              # Harbor uses self-signed cert
+          - --skip-tls-verify
+          - --cache=true
+          - --cache-repo=harbor.talos-tart-ha.talos-on-macos.com/pulse/cache
+          - --custom-platform=linux/arm64
+        volumeMounts:
+          - name: docker-config
+            mountPath: /kaniko/.docker
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 500m
+          limits:
+            memory: 1Gi
+            cpu: 1000m
