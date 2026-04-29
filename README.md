@@ -1,13 +1,14 @@
 <div align="center">
 
-# 🖥️ Talos on macOS
+### Run the Kubernetes OS on your MacBook — like it was meant to be there.
 
-### A production-grade Kubernetes cluster on your MacBook — in one command.
+# Talos Linux · Local HA Lab on Apple Silicon
 
-Not kind. Not minikube. A **real** 6-node HA cluster running Talos Linux,
-Cilium eBPF, GitOps, and HTTPS dashboards — entirely local, entirely private.
+[**Talos Linux**](https://talos.dev) is an immutable, API-driven OS built exclusively for Kubernetes.
+No SSH. No shell. No config drift. Just a cluster.
+This repo brings that production-grade OS to your Mac — fully automated, fully private.
 
-[![Talos](https://img.shields.io/badge/Talos-v1.13-FF6B6B?style=for-the-badge&logo=linux&logoColor=white)](https://talos.dev)
+[![Talos](https://img.shields.io/badge/Talos_Linux-v1.13-FF6B6B?style=for-the-badge&logo=linux&logoColor=white)](https://talos.dev)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Cilium](https://img.shields.io/badge/Cilium-eBPF-F8C517?style=for-the-badge&logo=cilium&logoColor=black)](https://cilium.io)
 [![Flux](https://img.shields.io/badge/Flux-GitOps-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
@@ -17,14 +18,33 @@ Cilium eBPF, GitOps, and HTTPS dashboards — entirely local, entirely private.
 
 ---
 
-## The problem
+## Why Talos Linux?
+
+Most local Kubernetes setups (kind, minikube, k3s) run on a general-purpose Linux OS
+with SSH, a package manager, and a shell — fine for demos, wrong for learning production ops.
+
+[**Talos Linux**](https://talos.dev) is different:
+
+- **Immutable OS** — the filesystem is read-only. Every change goes through the API.
+- **No SSH, no shell** — the entire node is managed via `talosctl`. That's it.
+- **API-first** — machine configs are YAML documents applied over mTLS. Fully declarative.
+- **Minimal attack surface** — Talos ships only what Kubernetes needs. Nothing else.
+- **Used in production** — the same OS you'd deploy on bare metal or cloud VMs.
+
+Running Talos locally means you practice the real thing — not a simplified stand-in.
+
+---
+
+## The problem this solves
+
+## The problem this solves
 
 You want to learn, test, and build on the same stack you'd run in production —
 Talos Linux, Cilium, Gateway API, Flux, ArgoCD — but spinning up a cloud cluster
 for every experiment is slow, expensive, and you lose it when you close the laptop.
 
-**This repo is the answer.** One `tofu apply` and your MacBook becomes a Kubernetes lab
-that outlives your terminal session.
+**This repo is the answer.** One `tofu apply` and your MacBook runs a 6-node Talos Linux HA cluster
+that outlives your terminal session — with real HTTPS, GitOps, and full observability.
 
 ---
 
