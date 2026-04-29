@@ -85,17 +85,19 @@ brew install cirruslabs/cli/tart opentofu siderolabs/tap/talosctl \
              kubectl helm fluxcd/tap/flux
 ```
 
-**Configure** — two lines:
+**Configure** — one line to change:
 ```bash
 cd bootstrap/terraform
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars — change flux_git_repository_url to your fork
+# Open terraform.tfvars and set flux_git_repository_url to your fork
 ```
 
 **Deploy:**
 ```bash
 tofu init && tofu apply
 ```
+
+Near the end, Terraform will ask for your **sudo password once** — to write `/etc/resolver/talos-on-macos.com` (so your Mac resolves the cluster domains) and add the cluster CA to your macOS Keychain (so the browser shows a green padlock). That's the only manual interaction.
 
 That's it. ~15 minutes later on Apple Silicon:
 
@@ -104,6 +106,8 @@ https://argocd.talos-tart-ha.talos-on-macos.com     🔒 green padlock
 https://grafana.talos-tart-ha.talos-on-macos.com    🔒 green padlock
 https://prometheus.talos-tart-ha.talos-on-macos.com 🔒 green padlock
 ```
+
+> Prefer non-interactive? Set `export TF_VAR_macos_sudo_password="yourpassword"` before running `tofu apply`.
 
 ---
 
