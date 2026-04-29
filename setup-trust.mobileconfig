@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>PayloadCertificateFileName</key>
+            <string>tart-lab-root-ca.crt</string>
+            <key>PayloadContent</key>
+            <data>LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJvVENDQVVhZ0F3SUJBZ0lVTkU3QkdMQ1h6cC9nNm1DYk9zVGxVekYzckhBd0NnWUlLb1pJemowRUF3SXcKTGpFUk1BOEdBMVVFQ2hNSWRHRnlkQzFzWVdJeEdUQVhCZ05WQkFNVEVIUmhjblF0YkdGaUlGSnZiM1FnUTBFdwpIaGNOTWpZd05ESTRNVE16TWpReldoY05Nell3TkRJMU1UTXpNalF6V2pBdU1SRXdEd1lEVlFRS0V3aDBZWEowCkxXeGhZakVaTUJjR0ExVUVBeE1RZEdGeWRDMXNZV0lnVW05dmRDQkRRVEJaTUJNR0J5cUdTTTQ5QWdFR0NDcUcKU000OUF3RUhBMElBQkhwTEs4akgvRUY2dDMwUTBua3RPelN1aGRubzBHQzJIY3h5NnZHemdhTjhTOVRKbDBiQQp4WFNLd0ZqU1dWa3JiYWhZcC8wUW9wRitzWjVSOFhtSkpVU2pRakJBTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJRZlJRM2F2QXFpb1FsN2hFZ1hOSnM2SUE2NFRUQUsKQmdncWhrak9QUVFEQWdOSkFEQkdBaUVBaDdJcmMxYmhIZ1RIMmJ6MHZUemtDR1dKMGVzc3FabXNVQ0JpTnVCNgpyaWtDSVFEM2hNeGNzaW1EaE9kcTVwMkVlemtHYWtNR0lRdnQ1MnRlU0tBRFEwNG9pQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K</data>
+            <key>PayloadDescription</key>
+            <string>Adds the tart-lab Root CA so your browser trusts https://*.talos-tart-ha.talos-on-macos.com</string>
+            <key>PayloadDisplayName</key>
+            <string>tart-lab Root CA (Talos-on-mac cluster)</string>
+            <key>PayloadIdentifier</key>
+            <string>com.talos-on-macos.tart-lab.ca</string>
+            <key>PayloadType</key>
+            <string>com.apple.security.root</string>
+            <key>PayloadUUID</key>
+            <string>A1B2C3D4-E5F6-7890-ABCD-EF1234567890</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+        </dict>
+    </array>
+    <key>PayloadDescription</key>
+    <string>Trusts the tart-lab private Root CA used by the Talos-on-mac Kubernetes cluster.
+After installing this profile, all HTTPS dashboards (ArgoCD, Grafana, Prometheus, etc.)
+will show a green padlock in your browser with no warnings.</string>
+    <key>PayloadDisplayName</key>
+    <string>Talos-on-mac Cluster CA Trust</string>
+    <key>PayloadIdentifier</key>
+    <string>com.talos-on-macos.ca-trust</string>
+    <key>PayloadOrganization</key>
+    <string>talos-on-macos</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>B2C3D4E5-F6A7-8901-BCDE-F12345678901</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>

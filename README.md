@@ -419,60 +419,76 @@ flux get all -A --watch
 
 ### 6 — Access the UIs
 
-#### ✅ Clean Domain Access — No Ports, No `/etc/hosts`
+#### ✅ Clean Domain Access — No Ports, No `/etc/hosts`, Green Padlock 🔒
 
-The cluster runs an **in-cluster CoreDNS** server that resolves all service hostnames.  
-Configure macOS **once** with the `setup-dns.sh` script and access everything by domain name.
+Domain pattern: `<service>.talos-tart-ha.talos-on-macos.com`
 
-**One-time macOS setup**:
-
-```bash
-./setup-dns.sh
-```
-
-That's it. You can now curl and open services by domain name:
+**One-time macOS setup** (DNS + CA trust):
 
 ```bash
-curl https://argocd.local
-curl https://grafana.local
-curl https://prometheus.local
-curl https://alertmanager.local
-curl https://loki.local
+bash setup-dns.sh
 ```
 
-Or in the browser:
-- **ArgoCD**: <https://argocd.local> — `admin` / `rQwuRbjDeHtXkImn`
-- **Grafana**: <https://grafana.local> — `admin` / `change-me`
-- **Prometheus**: <https://prometheus.local>
-- **Alertmanager**: <https://alertmanager.local>
-- **Loki**: <https://loki.local> (push API endpoint)
+This does two things:
+1. Configures `/etc/resolver/talos-on-macos.com` so macOS resolves `*.talos-on-macos.com` via the in-cluster CoreDNS
+2. Opens the **`setup-trust.mobileconfig`** installer — click **Install** in System Settings to trust the cluster CA
+
+> **Headless / CI / Ansible / Terraform**:
+> ```bash
+> bash setup-dns.sh --non-interactive
+> # or
+> bash scripts/trust-ca.sh --non-interactive
+> ```
+
+After setup, access everything by domain name:
+
+```bash
+curl https://argocd.talos-tart-ha.talos-on-macos.com
+curl https://grafana.talos-tart-ha.talos-on-macos.com
+curl https://prometheus.talos-tart-ha.talos-on-macos.com
+curl https://alertmanager.talos-tart-ha.talos-on-macos.com
+curl https://loki.talos-tart-ha.talos-on-macos.com
+```
+
+Or in the browser (green padlock after CA trust):
+- **ArgoCD**: <https://argocd.talos-tart-ha.talos-on-macos.com> — `admin` / see argocd secret
+- **Grafana**: <https://grafana.talos-tart-ha.talos-on-macos.com> — `admin` / `change-me`
+- **Prometheus**: <https://prometheus.talos-tart-ha.talos-on-macos.com>
+- **Alertmanager**: <https://alertmanager.talos-tart-ha.talos-on-macos.com>
+- **Loki**: <https://loki.talos-tart-ha.talos-on-macos.com> (push API endpoint)
 
 **How it works**:
-1. `setup-dns.sh` writes `/etc/resolver/local` — tells macOS to use the in-cluster DNS for `*.local`
-2. In-cluster CoreDNS (exposed on NodePort 30053) resolves all service names → ingress IP
-3. nginx ingress controller routes by hostname to the right service
-4. cert-manager provides TLS via wildcard `*.local` certificate
+1. `setup-dns.sh` writes `/etc/resolver/talos-on-macos.com` → macOS routes `*.talos-on-macos.com` to in-cluster CoreDNS
+2. CoreDNS (NodePort 30053) resolves all service names → `192.168.64.10` (nginx ingress)
+3. nginx DaemonSet routes by hostname to the right Kubernetes service
+4. cert-manager issues `wildcard-cluster-tls` via the `tart-lab Root CA`
+5. `setup-trust.mobileconfig` trusts that CA on macOS — green padlock in all browsers
 
 See [docs/ingress-architecture.md](docs/ingress-architecture.md) for full technical details.
 
-#### Fallback: Direct IP (If DNS Isn't Configured)
+#### Automation (Ansible / Terraform)
 
-If ingress isn't working, fallback to direct IP:
-
-```bash
-# Find the node running ingress controller
-kubectl get pods -n ingress-nginx -o wide | head -2
-# Note the IP from the output (e.g., 192.168.64.10)
-
-# Use that IP in browser
-http://192.168.64.10   # Will try to load based on local hostname
+```yaml
+# Ansible — include in your macOS provisioning playbook:
+- include_tasks: ansible/tasks/macos-trust.yaml
+  when: ansible_os_family == "Darwin"
 ```
 
-| Service | URL |
-|---------|-----|
-| ArgoCD | `http://192.168.64.10` (redirect to HTTPS) |
-| Grafana | `http://192.168.64.10` (add header: `Host: grafana.local`) |
-| Prometheus | `http://192.168.64.10` (add header: `Host: prometheus.local`) |
+```hcl
+# Terraform — add after cluster bootstrap:
+resource "null_resource" "trust_ca" {
+  provisioner "local-exec" {
+    command = "bash ${path.module}/scripts/trust-ca.sh --non-interactive"
+  }
+}
+```
+
+#### Fallback: Direct IP (If DNS Isn't Configured)
+
+```bash
+kubectl get pods -n ingress-nginx -o wide   # find ingress node IP
+curl -H "Host: argocd.talos-tart-ha.talos-on-macos.com" http://192.168.64.10/
+```
 | Alertmanager | `http://192.168.64.10` (add header: `Host: alertmanager.local`) |
 
 See [docs/accessing-services.md](docs/accessing-services.md) for manual header testing and troubleshooting.
