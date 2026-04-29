@@ -37,12 +37,15 @@ Running Talos locally means you practice the real thing — not a simplified sta
 
 ## The problem this solves
 
-You want to learn, test, and build on the same stack you'd run in production —
-Talos Linux, Cilium, Gateway API, Flux, ArgoCD — but spinning up a cloud cluster
-for every experiment is slow, expensive, and you lose it when you close the laptop.
+Mac Mini and MacBook Pro are powerful enough to run a real multi-node Kubernetes cluster.
+[Talos Linux](https://talos.dev) is the right OS for it — immutable, API-only, production-grade.
+[Tart](https://tart.run) is a free, open-source VM runtime built for Apple Silicon.
 
-**This repo is the answer.** One `tofu apply` and your MacBook runs a 6-node Talos Linux HA cluster
-that outlives your terminal session — with real HTTPS, GitOps, and full observability.
+**But nobody had wired them together.** Getting Talos Linux running on macOS in a fully automated,
+free-of-charge way was either undocumented, manual, or required paid software like Parallels or VMware Fusion.
+
+This repo fixes that. One command provisions a complete Talos Linux HA cluster on your Mac —
+no paid tools, no cloud account, no manual steps. Just your Mac and open-source software.
 
 ---
 
