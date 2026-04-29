@@ -76,24 +76,45 @@ resource "null_resource" "macos_setup" {
   count = var.skip_macos_setup ? 0 : 1
 
   triggers = {
-    # Re-run if cluster name or kubeconfig changes
     cluster_name    = var.cluster_name
     kubeconfig_path = module.talos.kubeconfig_path
   }
 
-  # Wait for Flux to deploy cert-manager and issue the cluster CA
-  # (cert-manager typically ready ~2 min after Flux bootstrap)
+  # Wait for all Flux-managed components before running macOS host setup:
+  #   1. cert-manager CA cert issued (needed for CA trust step)
+  #   2. nginx DaemonSet fully rolled out (needed for DNS to work)
+  #   3. CoreDNS NodePort reachable from macOS (needed for /etc/resolver to work)
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Waiting for cert-manager CA to be ready..."
-      KUBECONFIG="${module.talos.kubeconfig_path}" \
-        kubectl wait --for=condition=Ready certificate/root-ca \
-        -n cert-manager --timeout=300s 2>/dev/null || \
-        echo "⚠️  cert-manager not ready yet — run setup-dns.sh manually later"
+      set -euo pipefail
+      export KUBECONFIG="${module.talos.kubeconfig_path}"
 
-      echo "Configuring macOS DNS and trusting cluster CA..."
-      KUBECONFIG="${module.talos.kubeconfig_path}" \
-        bash "$(dirname "${path.module}")/../../setup-dns.sh" --non-interactive
+      echo "── Waiting for cert-manager CA certificate..."
+      kubectl wait --for=condition=Ready certificate/root-ca \
+        -n cert-manager --timeout=300s
+
+      echo "── Waiting for nginx ingress DaemonSet rollout..."
+      kubectl rollout status daemonset \
+        -n networking --timeout=300s 2>/dev/null || \
+      kubectl rollout status daemonset ingress-nginx-controller \
+        -n ingress-nginx --timeout=300s 2>/dev/null || true
+
+      echo "── Waiting for CoreDNS NodePort to be reachable..."
+      COREDNS_IP=""
+      for attempt in $(seq 1 30); do
+        COREDNS_IP=$(kubectl get nodes \
+          -l node-role.kubernetes.io/control-plane= \
+          -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)
+        if [ -n "$COREDNS_IP" ] && nc -z -w2 "$COREDNS_IP" 30053 2>/dev/null; then
+          echo "  CoreDNS reachable at $COREDNS_IP:30053"
+          break
+        fi
+        echo "  Waiting for CoreDNS... ($attempt/30)"
+        sleep 10
+      done
+
+      echo "── Configuring macOS DNS resolver and trusting cluster CA..."
+      bash "$(dirname "${path.module}")/../../setup-dns.sh" --non-interactive
     EOT
     interpreter = ["/bin/bash", "-c"]
   }

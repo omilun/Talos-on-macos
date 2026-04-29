@@ -1,0 +1,29 @@
+# kubelet-csr-approver/helmrelease.yaml
+#
+# Automatically approves kubelet serving certificate signing requests
+# (kubernetes.io/kubelet-serving). Without this, `kubectl logs` and
+# `kubectl exec` fail with TLS errors after a node restart because kubelet
+# generates new serving certs that sit Pending indefinitely.
+#
+# Safety: the approver only signs certs for nodes already registered in the
+# cluster. It rejects any CSR from an unknown node name.
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kubelet-csr-approver
+  namespace: kube-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kubelet-csr-approver
+      version: ">=1.0.0 <2.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: postfinance
+        namespace: flux-system
+      interval: 24h
+  values:
+    providerRegex: "^system:node:talos-.*$"
+    bypassDnsResolution: true  # Talos nodes — no reverse DNS needed
