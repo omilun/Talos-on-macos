@@ -8,6 +8,10 @@ _out/
 bootstrap/terraform/.terraform/
 bootstrap/terraform/terraform.tfstate
 bootstrap/terraform/terraform.tfstate.backup
+bootstrap/terraform/terraform.tfstate.*.backup
+bootstrap/terraform/terraform.tfstate.*.bak
+bootstrap/terraform/terraform.tfstate.pre-cleanup.bak
+bootstrap/terraform/*.tfstate*
 bootstrap/terraform/*.tfvars
 bootstrap/terraform/.terraform.lock.hcl
 
