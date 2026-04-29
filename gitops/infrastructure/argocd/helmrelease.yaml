@@ -37,7 +37,7 @@ spec:
       remediateLastFailure: true
   values:
     global:
-      domain: argocd.local
+      domain: argocd.talos-tart-ha.talos-on-macos.com
 
     configs:
       params:

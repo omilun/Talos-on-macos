@@ -31,6 +31,17 @@ info()    { echo -e "${GREEN}✅${NC} $*"; }
 warn()    { echo -e "${YELLOW}⚠️ ${NC} $*"; }
 error()   { echo -e "${RED}❌${NC} $*" >&2; }
 
+# ── sudo password resolution ─────────────────────────────────────────────────
+if [ -f "${REPO_ROOT}/.env" ]; then
+  # shellcheck disable=SC1091
+  set -o allexport; source "${REPO_ROOT}/.env"; set +o allexport
+fi
+if [ -z "${SUDO_PASSWORD:-}" ] && [[ "${MODE}" == "--non-interactive" ]]; then
+  read -rs -p "macOS sudo password (for CA trust): " SUDO_PASSWORD
+  echo ""
+fi
+run_sudo() { echo "${SUDO_PASSWORD:-}" | sudo -S "$@" 2>/dev/null; }
+
 # ── check if already trusted ─────────────────────────────────────────────────
 already_trusted() {
   security find-certificate -c "$CA_NAME" /Library/Keychains/System.keychain \
@@ -116,7 +127,7 @@ fi
 if [[ "${MODE}" == "--non-interactive" ]]; then
   # Headless mode: direct Keychain install (requires sudo)
   echo "Installing CA into System Keychain (requires sudo)..."
-  sudo security add-trusted-cert -d -r trustRoot \
+  run_sudo security add-trusted-cert -d -r trustRoot \
     -k /Library/Keychains/System.keychain "${CA_CERT_TMP}"
   info "CA trusted in System Keychain (headless mode)"
 else

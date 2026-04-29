@@ -15,3 +15,7 @@ bootstrap/terraform/.terraform.lock.hcl
 *.pem
 *.key
 nvram-arm64.bin
+setup-trust.mobileconfig
+
+# Local environment (contains sudo password)
+.env

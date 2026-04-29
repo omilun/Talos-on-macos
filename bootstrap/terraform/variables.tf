@@ -168,13 +168,22 @@ variable "flux_git_branch" {
 }
 
 variable "flux_git_path" {
-  description = "Path within the Git repository where Flux cluster manifests live."
+  description = "Path within the Git repository where Flux cluster manifests live. Defaults to gitops/clusters/<cluster_name>."
   type        = string
-  default     = "gitops/clusters/tart-lab"
+  default     = ""
 }
 
 variable "flux_github_token" {
   description = "GitHub personal access token (needed for private repos or flux bootstrap github)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# ── macOS host setup ──────────────────────────────────────────────────────────
+
+variable "macos_sudo_password" {
+  description = "macOS sudo password for /etc/resolver and CA trust steps. If empty, setup-dns.sh will prompt interactively."
   type        = string
   default     = ""
   sensitive   = true

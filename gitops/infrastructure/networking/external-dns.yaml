@@ -1,18 +1,13 @@
 # external-dns.yaml
 # In-cluster CoreDNS that resolves service hostnames to the
-# nginx ingress controller IP (192.168.64.10 — hostNetwork node).
+# Cilium Gateway LoadBalancer IP (assigned from CiliumLoadBalancerIPPool 192.168.64.200/28).
+#
+# The IP below is a placeholder — setup-dns.sh auto-discovers the actual Gateway
+# LoadBalancer IP and updates this ConfigMap on every run.
 #
 # Domain pattern: <service>.<cluster>.<repo>.com
 #   Cluster: talos-tart-ha
-#   Repo:    talos-on-macos
 #   Example: argocd.talos-tart-ha.talos-on-macos.com
-#
-# macOS one-time setup (no /etc/hosts, no mDNS conflicts):
-#   sudo mkdir -p /etc/resolver
-#   printf "nameserver 192.168.64.7\nport 30053\n" | sudo tee /etc/resolver/talos-on-macos.com
-#   sudo dscacheutil -flushcache
-#
-# After that: curl https://argocd.talos-tart-ha.talos-on-macos.com works.
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -23,6 +23,10 @@ locals {
   # Resolve output directory relative to the terraform root.
   out_dir_abs = abspath(var.out_dir)
 
+  # Flux GitOps path: use explicit var if set, otherwise derive from cluster name.
+  # Each cluster gets its own entrypoint under gitops/clusters/<cluster_name>/
+  flux_git_path = coalesce(var.flux_git_path, "gitops/clusters/${var.cluster_name}")
+
   # NVRAM seed binary shipped in repo (eliminates Ubuntu clone step on clean machines).
   nvram_src = abspath("${path.root}/../../nvram-arm64.bin")
 }

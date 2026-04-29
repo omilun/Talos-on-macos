@@ -1,0 +1,31 @@
+# networking/gateway.yaml
+# Cilium Gateway API — single HTTPS entrypoint for all cluster services.
+#
+# The wildcard TLS cert is issued by cert-manager (cert-manager-config/wildcard-cert.yaml)
+# and stored in Secret wildcard-cluster-tls (networking ns).
+# Cilium reads the Secret directly — no nginx middleman, cert is always correct.
+#
+# HTTPRoutes in argocd/monitoring namespaces attach to this Gateway.
+# allowedRoutes.namespaces.from: All lets any namespace attach.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: main-gateway
+  namespace: networking
+  labels:
+    app.kubernetes.io/managed-by: flux
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-cluster-tls
+            namespace: networking
+      allowedRoutes:
+        namespaces:
+          from: All

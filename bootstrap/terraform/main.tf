@@ -61,7 +61,7 @@ module "flux" {
   flux_version            = var.flux_version
   flux_git_repository_url = var.flux_git_repository_url
   flux_git_branch         = var.flux_git_branch
-  flux_git_path           = var.flux_git_path
+  flux_git_path           = local.flux_git_path
   flux_github_token       = var.flux_github_token
 
   depends_on = [module.gateway_api]
@@ -85,19 +85,36 @@ resource "null_resource" "macos_setup" {
   #   2. nginx DaemonSet fully rolled out (needed for DNS to work)
   #   3. CoreDNS NodePort reachable from macOS (needed for /etc/resolver to work)
   provisioner "local-exec" {
+    environment = {
+      KUBECONFIG    = module.talos.kubeconfig_path
+      SUDO_PASSWORD = var.macos_sudo_password
+    }
     command = <<-EOT
       set -euo pipefail
-      export KUBECONFIG="${module.talos.kubeconfig_path}"
 
       echo "── Waiting for cert-manager CA certificate..."
       kubectl wait --for=condition=Ready certificate/root-ca \
         -n cert-manager --timeout=300s
 
-      echo "── Waiting for nginx ingress DaemonSet rollout..."
-      kubectl rollout status daemonset \
-        -n networking --timeout=300s 2>/dev/null || \
-      kubectl rollout status daemonset ingress-nginx-controller \
-        -n ingress-nginx --timeout=300s 2>/dev/null || true
+      echo "── Waiting for wildcard TLS certificate..."
+      kubectl wait --for=condition=Ready certificate/wildcard-cluster-tls \
+        -n networking --timeout=300s
+
+      echo "── Waiting for Cilium Gateway to get a LoadBalancer IP..."
+      GW_IP=""
+      for attempt in $(seq 1 30); do
+        GW_IP=$(kubectl get gateway main-gateway -n networking \
+          -o jsonpath='{.status.addresses[0].value}' 2>/dev/null || true)
+        if [ -n "$GW_IP" ]; then
+          echo "  Gateway LB IP: $GW_IP"
+          break
+        fi
+        echo "  Waiting for Gateway LB IP... ($attempt/30)"
+        sleep 10
+      done
+      if [ -z "$GW_IP" ]; then
+        echo "WARNING: Gateway LB IP not assigned after 5 minutes — continuing anyway"
+      fi
 
       echo "── Waiting for CoreDNS NodePort to be reachable..."
       COREDNS_IP=""

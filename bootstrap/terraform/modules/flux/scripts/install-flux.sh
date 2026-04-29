@@ -78,6 +78,86 @@ fi
 
 log "Configuring GitRepository: ${FLUX_GIT_REPOSITORY_URL} (branch: ${FLUX_GIT_BRANCH})"
 
+# ── 4a. Auto-create gitops/clusters/<name>/ entrypoint if missing ─────────────
+# Each cluster needs infrastructure.yaml + apps.yaml under gitops/clusters/<name>/.
+# If this is a new cluster name, create the files, commit, and push so Flux
+# can reconcile them after bootstrap.
+CLUSTER_NAME=$(basename "${FLUX_GIT_PATH}")
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)"
+CLUSTER_DIR="${REPO_ROOT}/gitops/clusters/${CLUSTER_NAME}"
+
+if [ ! -f "${CLUSTER_DIR}/infrastructure.yaml" ]; then
+  log "Creating Flux entrypoint for cluster: ${CLUSTER_NAME}"
+  mkdir -p "${CLUSTER_DIR}"
+
+  cat > "${CLUSTER_DIR}/infrastructure.yaml" << INFRA
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/infrastructure
+  prune: true
+  wait: true
+  timeout: 15m
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/infrastructure/cert-manager-config
+  prune: true
+  wait: true
+  timeout: 10m
+  dependsOn:
+    - name: infrastructure
+INFRA
+
+  cat > "${CLUSTER_DIR}/apps.yaml" << APPS
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/apps
+  prune: true
+  dependsOn:
+    - name: infrastructure
+  timeout: 5m
+APPS
+
+  # Commit and push so Flux can read the files from GitHub
+  if git -C "${REPO_ROOT}" status --porcelain | grep -q "${CLUSTER_NAME}"; then
+    git -C "${REPO_ROOT}" add "${CLUSTER_DIR}/"
+    git -C "${REPO_ROOT}" \
+      -c user.name="${GIT_AUTHOR_NAME:-omilun}" \
+      -c user.email="${GIT_AUTHOR_EMAIL:-omilun@users.noreply.github.com}" \
+      commit -m "feat: add Flux entrypoint for cluster ${CLUSTER_NAME}"
+    git -C "${REPO_ROOT}" push origin HEAD
+    ok "Flux entrypoint committed and pushed for cluster: ${CLUSTER_NAME}"
+  else
+    log "Flux entrypoint already committed for cluster: ${CLUSTER_NAME}"
+  fi
+fi
+
 # Build flux source git args
 GIT_ARGS=(
   --url="${FLUX_GIT_REPOSITORY_URL}"

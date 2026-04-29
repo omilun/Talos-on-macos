@@ -5,4 +5,4 @@ resources:
   - namespace.yaml
   - kube-prometheus-stack.yaml
   - loki.yaml
-  - ingress.yaml
+  - httproutes.yaml

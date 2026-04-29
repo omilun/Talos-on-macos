@@ -9,6 +9,5 @@ resources:
   - networking
   - cert-manager
   - kubelet-csr-approver
-  - ingress-nginx
   - argocd
   - monitoring
