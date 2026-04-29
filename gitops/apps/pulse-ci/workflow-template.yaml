@@ -33,7 +33,7 @@ spec:
                 - name: dockerfile
                   value: backend/Dockerfile
                 - name: destination
-                  value: harbor.talos-tart-ha.talos-on-macos.com/pulse/backend:latest
+                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/backend:latest
           - name: frontend
             template: kaniko-build
             arguments:
@@ -43,7 +43,7 @@ spec:
                 - name: dockerfile
                   value: frontend/Dockerfile
                 - name: destination
-                  value: harbor.talos-tart-ha.talos-on-macos.com/pulse/frontend:latest
+                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/frontend:latest
 
     # ─── Kaniko build template ─────────────────────────────────────────────
     - name: kaniko-build
@@ -61,7 +61,7 @@ spec:
           - --insecure              # Harbor uses self-signed cert
           - --skip-tls-verify
           - --cache=true
-          - --cache-repo=harbor.talos-tart-ha.talos-on-macos.com/pulse/cache
+          - --cache-repo=registry.talos-tart-ha.talos-on-macos.com/pulse/cache
           - --custom-platform=linux/arm64
         volumeMounts:
           - name: docker-config

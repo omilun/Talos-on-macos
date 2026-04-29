@@ -25,12 +25,16 @@ data:
         }
         ready
         hosts {
-            192.168.64.10 argocd.talos-tart-ha.talos-on-macos.com
-            192.168.64.10 grafana.talos-tart-ha.talos-on-macos.com
-            192.168.64.10 prometheus.talos-tart-ha.talos-on-macos.com
-            192.168.64.10 alertmanager.talos-tart-ha.talos-on-macos.com
-            192.168.64.10 loki.talos-tart-ha.talos-on-macos.com
-            192.168.64.10 talos-tart-ha.talos-on-macos.com
+            192.168.64.192 argocd.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 grafana.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 prometheus.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 alertmanager.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 loki.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 workflows.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 registry.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 pulse.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 api.pulse.talos-tart-ha.talos-on-macos.com
+            192.168.64.192 talos-tart-ha.talos-on-macos.com
             fallthrough
         }
         forward . /etc/resolv.conf

@@ -106,7 +106,7 @@ info "DNS cache flushed"
 
 echo ""
 echo "Testing DNS resolution:"
-for svc in argocd grafana prometheus alertmanager loki; do
+for svc in argocd grafana prometheus alertmanager loki workflows registry pulse api.pulse; do
   RESULT=$(dscacheutil -q host -a name "${svc}.${DOMAIN}" 2>/dev/null | awk '/ip_address/{print $2}')
   if [ "$RESULT" = "$GATEWAY_IP" ]; then
     info "  ${svc}.${DOMAIN} → $RESULT"
@@ -137,6 +137,9 @@ echo "  open https://grafana.${DOMAIN}     (admin / change-me)"
 echo "  open https://prometheus.${DOMAIN}"
 echo "  open https://alertmanager.${DOMAIN}"
 echo "  open https://loki.${DOMAIN}"
+echo "  open https://workflows.${DOMAIN}"
+echo "  open https://registry.${DOMAIN}    (Zot OCI registry)"
+echo "  open https://pulse.${DOMAIN}       (pulse demo app)"
 echo ""
 if already_trusted; then
   info "CA trusted — all dashboards should show a green padlock 🔒"
