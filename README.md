@@ -1,8 +1,6 @@
 <div align="center">
 
-### Run the Kubernetes OS on your MacBook — like it was meant to be there.
-
-# Talos Linux · Local HA Lab on Apple Silicon
+# Running your own Kubernetes clusters on macOS using Talos Linux and Tart
 
 [**Talos Linux**](https://talos.dev) is an immutable, API-driven OS built exclusively for Kubernetes.
 No SSH. No shell. No config drift. Just a cluster.
