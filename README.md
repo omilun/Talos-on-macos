@@ -6,11 +6,11 @@
 No SSH. No shell. No config drift. Just a cluster.
 This repo brings that production-grade OS to your Mac — fully automated, fully private.
 
-[![Talos](https://img.shields.io/badge/Talos_Linux-v1.13-FF6B6B?style=for-the-badge&logo=linux&logoColor=white)](https://talos.dev)
+[![Talos Linux](https://img.shields.io/badge/Talos_Linux-v1.13-FF6B6B?style=for-the-badge&logo=linux&logoColor=white)](https://talos.dev)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Cilium](https://img.shields.io/badge/Cilium-eBPF-F8C517?style=for-the-badge&logo=cilium&logoColor=black)](https://cilium.io)
 [![Flux](https://img.shields.io/badge/Flux-GitOps-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
+[![Tart](https://img.shields.io/badge/Tart-Apple_Silicon-000000?style=for-the-badge&logo=apple&logoColor=white)](https://tart.run)
 
 </div>
 
