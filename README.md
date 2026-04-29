@@ -35,8 +35,6 @@ Running Talos locally means you practice the real thing — not a simplified sta
 
 ## The problem this solves
 
-## The problem this solves
-
 Mac Mini and MacBook Pro are powerful enough to run a real multi-node Kubernetes cluster.
 [Talos Linux](https://talos.dev) is the right OS for it — immutable, API-only, production-grade.
 [Tart](https://tart.run) is a free, open-source VM runtime built for Apple Silicon.
