@@ -1,0 +1,21 @@
+# ArgoCD AppProject — apps
+# All user applications (pulse, future apps) belong to this project.
+# Infrastructure components stay in the 'default' project managed by Flux.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  description: User applications deployed via ArgoCD
+  sourceRepos:
+    - "https://github.com/omilun/*"   # allow any repo under your GitHub account
+  destinations:
+    - namespace: "*"
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

@@ -1,0 +1,29 @@
+# ArgoCD Application — pulse
+# ArgoCD deploys the pulse app from its own GitHub repo.
+# Flux manages infrastructure; ArgoCD manages apps. Clean separation.
+#
+# Image tags are updated by GitHub Actions in the pulse repo (image-updater or
+# a simple sed on the kustomization.yaml image tag).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pulse
+  namespace: argocd
+  annotations:
+    # ArgoCD auto-syncs every 3m; GitHub Actions pushes updated image tags
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: apps
+  source:
+    repoURL: https://github.com/omilun/pulse
+    targetRevision: main
+    path: deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pulse
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

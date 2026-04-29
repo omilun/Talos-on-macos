@@ -149,5 +149,6 @@ sudo rm -f /etc/resolver/talos-on-macos.com
 | 🚀 [Getting started](docs/getting-started.md) | Prerequisites, config, first deploy |
 | 🏛 [Architecture](docs/architecture.md) | Stack layers, networking, DNS/TLS |
 | 🧩 [Node pools](docs/node-pools.md) | CP as worker, tainted pools, infra nodes, recipes |
+| 📦 [Deploy apps](docs/deploy-apps.md) | Add apps with ArgoCD, CloudNativePG, HTTPS — with the pulse demo app |
 | 🌍 [Multi-cluster](docs/multi-cluster.md) | Running multiple clusters side by side |
 | 🔧 [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
