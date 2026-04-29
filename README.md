@@ -47,18 +47,33 @@ no paid tools, no cloud account, no manual steps. Just your Mac and open-source 
 
 ---
 
-## What you get
+## What you get — out of the box, after one command
 
-| | |
-|---|---|
-| 🏗 **HA cluster** | 3 control-plane + 3 worker nodes via [Tart](https://tart.run) VMs on Apple Silicon |
-| ⚡ **Cilium eBPF** | kube-proxy fully replaced — Gateway API, Hubble, L2 LB announcements |
-| 🌐 **Real HTTPS** | `*.talos-on-macos.com` resolves on your Mac, certs trusted by your browser — no `--insecure`, no port-forwards |
-| �� **Fully automated** | Disk image auto-downloaded, DNS configured, CA installed to Keychain — zero manual steps |
-| 📦 **GitOps** | Flux + ArgoCD — every component is declarative, self-healing, and in git |
-| 📊 **Observability** | Grafana · Prometheus · Alertmanager · Loki — wired up and reachable at deploy time |
-| 🧩 **Flexible nodes** | Declare any number of node pools with custom CPU/RAM/labels/taints in `terraform.tfvars` |
-| 🔒 **Stays private** | Nothing exposed outside your laptop — no tunnels, no cloud DNS, no DuckDNS |
+> *Not a demo. Not a sandbox. A real cluster you'd be proud to show in a job interview.*
+
+**The cluster**
+- 🏗 **6-node Talos Linux HA cluster** — 3 control-plane + 3 workers, etcd quorum, automatic node recovery
+- ⚡ **Cilium eBPF** — kube-proxy is gone. Networking runs in the kernel. Gateway API, Hubble, L2 LoadBalancer.
+- 🔐 **Immutable nodes** — no SSH, no shell, no package manager. Every change goes through the Talos API.
+
+**Networking & HTTPS**
+- 🌐 **Real domain names** — `*.talos-on-macos.com` resolves on your Mac without editing `/etc/hosts`
+- 🔒 **Green padlock in your browser** — cert-manager issues a wildcard TLS cert from a private CA, trusted by macOS Keychain automatically
+- 🚫 **Zero port-forwards** — open `https://argocd.talos-on-macos.com` like a real URL. That's it.
+
+**GitOps & automation**
+- 📦 **Flux + ArgoCD** — every component is in git, declarative, and self-healing. Break something? Git reset and reconcile.
+- 🤖 **One command deploy** — Talos image auto-downloaded, VMs created, cluster bootstrapped, DNS configured, CA trusted. You watch, it works.
+- �� **Flexible node pools** — want a tainted GPU pool? An infra-only CP? Two lines in `terraform.tfvars`.
+
+**Observability — ready, not configured**
+- 📊 Grafana · Prometheus · Alertmanager · Loki — dashboards load on first visit, no setup wizard
+- 🔭 Hubble UI — live network flow visualisation across the cluster
+
+**The deal**
+- 💸 **100% free** — Tart, Talos, OpenTofu, Cilium, Flux — all open source, no licences, no cloud bills
+- 🔒 **Stays on your Mac** — no tunnels, no DuckDNS, no exposure to the internet
+- 🍎 **Mac Mini / MacBook** — runs on Apple Silicon, sleeps with your laptop, wakes with your cluster still there
 
 ---
 
