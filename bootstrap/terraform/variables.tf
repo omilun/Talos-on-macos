@@ -62,9 +62,15 @@ variable "tart_bridge_gateway" {
 # ── VM image ──────────────────────────────────────────────────────────────────
 
 variable "image_path" {
-  description = "Absolute path to the Talos metal-arm64.raw disk image. Download from https://factory.talos.dev."
+  description = "Path to the Talos metal-arm64.raw disk image. If the file does not exist, Terraform downloads it automatically from factory.talos.dev."
   type        = string
   default     = "~/Downloads/metal-arm64.raw"
+}
+
+variable "talos_schematic_id" {
+  description = "Talos factory schematic ID. Default is bare-metal arm64 with no extensions. Generate a custom one at https://factory.talos.dev."
+  type        = string
+  default     = "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4b"
 }
 
 variable "disk_size_gb" {

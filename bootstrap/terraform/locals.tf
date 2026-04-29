@@ -27,6 +27,9 @@ locals {
   # Each cluster gets its own entrypoint under gitops/clusters/<cluster_name>/
   flux_git_path = coalesce(var.flux_git_path, "gitops/clusters/${var.cluster_name}")
 
+  # Resolve image path (expands ~ and makes absolute)
+  image_path_abs = abspath(pathexpand(var.image_path))
+
   # NVRAM seed binary shipped in repo (eliminates Ubuntu clone step on clean machines).
   nvram_src = abspath("${path.root}/../../nvram-arm64.bin")
 }

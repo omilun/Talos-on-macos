@@ -1,11 +1,41 @@
+# ── Talos disk image (auto-download if not present) ───────────────────────────
+# Downloads the Talos metal-arm64.raw image from factory.talos.dev if the file
+# does not already exist at var.image_path. Safe to re-run — skips if present.
+resource "null_resource" "talos_image" {
+  triggers = {
+    image_path    = local.image_path_abs
+    talos_version = var.talos_version
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -euo pipefail
+      IMAGE="${local.image_path_abs}"
+      if [ -f "$IMAGE" ]; then
+        echo "[OK] Talos image already present: $IMAGE"
+        exit 0
+      fi
+      echo "[INFO] Downloading Talos ${var.talos_version} image to $IMAGE ..."
+      mkdir -p "$(dirname "$IMAGE")"
+      curl -# -L \
+        -o "$IMAGE" \
+        "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/metal-arm64.raw"
+      echo "[OK] Image downloaded: $IMAGE"
+    EOT
+    interpreter = ["/bin/bash", "-c"]
+  }
+}
+
 # ── VM lifecycle ──────────────────────────────────────────────────────────────
 module "vms" {
   source = "./modules/tart-vms"
 
   nodes        = local.nodes
-  image_path   = var.image_path
+  image_path   = local.image_path_abs
   disk_size_gb = var.disk_size_gb
   nvram_src    = local.nvram_src
+
+  depends_on = [null_resource.talos_image]
 }
 
 # ── Talos cluster (secrets, configs, apply, bootstrap, kubeconfig) ────────────

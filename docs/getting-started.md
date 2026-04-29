@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Install tools with Homebrew:
+Install with Homebrew:
 
 ```bash
 brew install cirruslabs/cli/tart \
@@ -13,69 +13,96 @@ brew install cirruslabs/cli/tart \
              fluxcd/tap/flux
 ```
 
-## Required Files (one-time setup)
-
-### 1. Talos Disk Image
-
-Download from [factory.talos.dev](https://factory.talos.dev):
-- Version: `v1.13.0`
-- Platform: `metal`
-- Architecture: `arm64`
-- Extensions: none
-
-Place it at the path configured in `terraform.tfvars` (default: `~/Downloads/metal-arm64.raw`).
-
-### 2. NVRAM Seed
-
-Tart needs a UEFI NVRAM seed to boot arm64 VMs. Copy from any existing Tart VM:
+Verify:
 
 ```bash
-cp ~/.tart/vms/<any-vm>/nvram bootstrap/terraform/nvram-arm64.bin
+tart --version && tofu --version && talosctl version --client && flux version
 ```
 
-Or extract from the repo root if present:
+## Configuration
 
 ```bash
-cp nvram-arm64.bin bootstrap/terraform/nvram-arm64.bin
+cd ~/Codes/Personal/tart-lab/Talos-on-macos/bootstrap/terraform
+cp terraform.tfvars.example terraform.tfvars
 ```
+
+Edit `terraform.tfvars`:
+
+| Variable | Required | Description |
+|---|---|---|
+| `flux_git_repository_url` | ✅ | Your fork URL: `https://github.com/<you>/Talos-on-macos` |
+| `flux_github_token` | For private repos | GitHub PAT with `repo` scope |
+| `cluster_name` | Optional | Default: `talos-tart-ha` |
+| `talos_version` | Optional | Default: `v1.13.0` |
+| `image_path` | Optional | Default: `~/Downloads/metal-arm64.raw` (auto-downloaded) |
+
+### Sudo password (optional)
+
+Terraform needs sudo to write `/etc/resolver` and trust the CA. You can:
+
+**Option A** — let it prompt during `tofu apply` (default behaviour)
+
+**Option B** — provide it upfront via `.env` at the repo root:
+```bash
+cp .env.example .env
+# Edit .env: set SUDO_PASSWORD=yourpassword
+```
+
+**Option C** — set in `terraform.tfvars`:
+```hcl
+macos_sudo_password = "yourpassword"
+```
+
+> `.env` and `terraform.tfvars` are gitignored — never committed.
 
 ## Deploy
 
 ```bash
-cd ~/Codes/Personal/tart-lab/Talos-on-macos/bootstrap/terraform
-
-# Copy and edit the example config
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars: set talos_image_path, github_token, github_owner, github_repo
-
 tofu init
 tofu apply
 ```
 
-Terraform provisions 6 VMs → installs Talos → bootstraps Kubernetes → deploys Cilium → bootstraps Flux → configures DNS and CA trust on macOS.
+Terraform will:
+1. Download the Talos disk image if not already present
+2. Create 6 Tart VMs (3 control-plane + 3 workers)
+3. Generate Talos secrets and machine configs
+4. Bootstrap Talos + Kubernetes
+5. Install Cilium (eBPF, kube-proxy replacement)
+6. Install Gateway API CRDs
+7. Bootstrap Flux (GitOps — points at this repo)
+8. Wait for cert-manager to issue wildcard TLS cert
+9. Wait for Cilium Gateway to get a LoadBalancer IP
+10. Configure macOS DNS (`/etc/resolver`) and trust the cluster CA
 
-## Access Services
+**Total time: ~15 minutes** on Apple Silicon.
 
-After `tofu apply` completes, run `setup-dns.sh` (called automatically by Terraform):
+## Access your cluster
+
+After `tofu apply` completes:
 
 ```bash
-bash setup-dns.sh
+export KUBECONFIG=~/Codes/Personal/tart-lab/Talos-on-macos/_out/kubeconfig.yaml
+
+# Check cluster
+kubectl get nodes
+
+# Check Flux
+flux get all -A
 ```
 
-Then open:
-- https://argocd.talos-tart-ha.talos-on-macos.com
-- https://grafana.talos-tart-ha.talos-on-macos.com  (admin / change-me)
-- https://prometheus.talos-tart-ha.talos-on-macos.com
+Open dashboards (all HTTPS with green padlock):
 
-## Destroy
+| Service | URL |
+|---|---|
+| ArgoCD | https://argocd.talos-tart-ha.talos-on-macos.com |
+| Grafana | https://grafana.talos-tart-ha.talos-on-macos.com (admin / change-me) |
+| Prometheus | https://prometheus.talos-tart-ha.talos-on-macos.com |
+| Alertmanager | https://alertmanager.talos-tart-ha.talos-on-macos.com |
+| Loki | https://loki.talos-tart-ha.talos-on-macos.com |
+
+## Tear down
 
 ```bash
 tofu destroy
-```
-
-Then clean up macOS:
-
-```bash
-sudo rm -f /etc/resolver/talos-on-macos.com
-sudo dscacheutil -flushcache
+sudo rm -f /etc/resolver/talos-on-macos.com && sudo dscacheutil -flushcache
 ```
