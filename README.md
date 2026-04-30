@@ -71,7 +71,8 @@ no paid tools, no cloud account, no manual steps. Just your Mac and open-source 
 
 **Observability — ready, not configured**
 - 📊 Grafana · Prometheus · Alertmanager · Loki — dashboards load on first visit, no setup wizard
-- 🔭 Hubble UI — live network flow visualisation across the cluster
+- 🔭 Grafana Tempo — distributed tracing; OTel Operator + Collector pre-configured
+- 🌐 Hubble CLI — live network flow visibility across the cluster (port-forward for UI)
 
 **Container Registry**
 - 📦 **Zot OCI Registry** — arm64-native, CNCF project, no auth required. Push images from your Mac or from within the cluster. UI at `https://registry.talos-tart-ha.talos-on-macos.com`
@@ -135,7 +136,8 @@ https://prometheus.talos-tart-ha.talos-on-macos.com 🔒 green padlock
 │   ├── Bootstraps Flux ──────────────────────────────────────┐    │    │
 │   │   cert-manager  →  private CA  →  wildcard TLS cert     │    │    │
 │   │   Cilium Gateway  →  HTTPS :443  →  HTTPRoutes          │    │    │
-│   │   ArgoCD · Grafana · Prometheus · Loki                  │    │    │
+│   │   ArgoCD · Grafana · Prometheus · Loki · Tempo          │    │    │
+│   │   OTel Operator · OTel Collector                        │    │    │
 │   │   Zot OCI Registry (arm64-native, no auth)              │    │    │
 │   │   Argo Events · Argo Workflows · BuildKit               │    │    │
 │   └── Configures macOS: /etc/resolver + Keychain CA trust        │    │
@@ -160,7 +162,7 @@ sudo rm -f /etc/resolver/talos-on-macos.com
 | 🚀 [Getting started](docs/getting-started.md) | Prerequisites, config, first deploy |
 | 🏛 [Architecture](docs/architecture.md) | Stack layers, networking, DNS/TLS, CI/CD conveyor belt |
 | 🔄 [GitOps](docs/gitops.md) | Flux 3-layer pattern, admin vs user separation, adding modules |
-| 📊 [Observability](docs/observability.md) | Grafana, Prometheus, Loki, Alertmanager, Hubble UI |
+| 📊 [Observability](docs/observability.md) | Grafana, Prometheus, Loki, Tempo (traces), Alertmanager, Hubble CLI |
 | 🧩 [Node pools](docs/node-pools.md) | CP as worker, tainted pools, infra nodes, recipes |
 | 📦 [Deploy apps](docs/deploy-apps.md) | Add apps with ArgoCD, CloudNativePG, HTTPS, cluster-native CI |
 | 🌍 [Multi-cluster](docs/multi-cluster.md) | Running multiple clusters side by side |

@@ -136,7 +136,6 @@ $GATEWAY_IP  loki.talos-tart-ha.talos-on-macos.com
 $GATEWAY_IP  registry.talos-tart-ha.talos-on-macos.com
 $GATEWAY_IP  events.talos-tart-ha.talos-on-macos.com
 $GATEWAY_IP  pulse.talos-tart-ha.talos-on-macos.com
-$GATEWAY_IP  api.pulse.talos-tart-ha.talos-on-macos.com
 EOF
 ```
 
@@ -152,7 +151,8 @@ export KUBECONFIG=~/Codes/Personal/tart-lab/Talos-on-macos/_out/kubeconfig.yaml
 Required for the pulse CI conveyor belt to build images and open PRs:
 
 ```bash
-# GitHub PAT — needs repo scope (push, PR creation, webhook validation)
+# GitHub PAT — needs write access to this repo (push branches + open PRs)
+# Required scopes: Contents (read/write) and Pull requests (read/write)
 kubectl create secret generic github-token -n argo \
   --from-literal=token=<your-GitHub-PAT>
 
@@ -195,7 +195,7 @@ kubectl -n buildkit get pods
 | Service | URL | Credentials |
 |---|---|---|
 | ArgoCD | https://argocd.talos-tart-ha.talos-on-macos.com | `admin` / see secret |
-| Grafana | https://grafana.talos-tart-ha.talos-on-macos.com | `admin` / `prom-operator` |
+| Grafana | https://grafana.talos-tart-ha.talos-on-macos.com | `admin` / `change-me` |
 | Argo Workflows | https://workflows.talos-tart-ha.talos-on-macos.com | — |
 | Zot Registry | https://registry.talos-tart-ha.talos-on-macos.com | no auth |
 

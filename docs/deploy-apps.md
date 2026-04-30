@@ -203,8 +203,11 @@ Go API + Next.js frontend + CloudNativePG + cluster-native CI + ArgoCD deploy.
 
 | URL | Service |
 |---|---|
-| https://pulse.talos-tart-ha.talos-on-macos.com | Next.js frontend |
-| https://api.pulse.talos-tart-ha.talos-on-macos.com | Go API |
+| https://pulse.talos-tart-ha.talos-on-macos.com | Next.js frontend (proxies all API calls server-side) |
+
+All traffic enters through the Next.js frontend. It proxies requests to the Go backend services
+server-side (`/auth/*` → auth-service, `/api/lt/*` → longterm-service, `/api/daily/*` → daily-service)
+so no separate API ingress is needed.
 
 CI is handled by the in-cluster conveyor belt — a push to `omilun/pulse` triggers Argo Events,
 which runs a BuildKit DAG in Argo Workflows, pushes images to Zot, then opens a PR here to
@@ -222,7 +225,7 @@ The cluster runs a full CI conveyor belt. No GitHub Actions runners required.
 2. GitHub sends webhook → `https://events.talos-tart-ha.talos-on-macos.com/pulse/push`
 3. Argo Events EventSource validates the HMAC secret and publishes to EventBus (NATS)
 4. Sensor picks up the event, triggers the `pulse-build` WorkflowTemplate with the commit SHA
-5. Argo Workflows runs a DAG: 4 parallel BuildKit builds (auth-service, task-service, notification-service, frontend)
+5. Argo Workflows runs a DAG: 4 parallel BuildKit builds (auth-service, longterm-service, daily-service, frontend)
 6. Images tagged `sha-<7char>` are pushed to `registry.talos-tart-ha.talos-on-macos.com`
 7. A `create-pr` step clones this repo, patches image tags in `apps/pulse/deploy/`, and opens a PR
 8. Merge the PR → ArgoCD auto-syncs → pods roll out with the new SHA-tagged images

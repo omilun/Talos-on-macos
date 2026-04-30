@@ -10,7 +10,6 @@ Everything is pre-configured and running after `tofu apply`.
 | Grafana | https://grafana.talos-tart-ha.talos-on-macos.com | admin / `change-me` |
 | Prometheus | https://prometheus.talos-tart-ha.talos-on-macos.com | — |
 | Alertmanager | https://alertmanager.talos-tart-ha.talos-on-macos.com | — |
-| Hubble UI | https://hubble.talos-tart-ha.talos-on-macos.com | — |
 
 > Grafana password is set in `gitops/infrastructure/monitoring/`. Change it by updating the HelmRelease values.
 
@@ -32,6 +31,7 @@ Grafana is pre-loaded with dashboards for every component in the stack.
 | **Cilium** | Drop rates, policy verdicts, endpoint health |
 | **CoreDNS** | Query rate, errors, cache hits |
 | **cert-manager** | Certificate expiry, renewal events |
+| **Tempo** | Trace ingest rate, span counts, service map |
 
 ### Changing the admin password
 
@@ -209,36 +209,50 @@ For longer retention, increase the PVC size and set `limits_config.retention_per
 
 ---
 
+## Distributed Tracing (Tempo + OTel)
+
+The cluster ships [Grafana Tempo](https://grafana.com/oss/tempo/) and the [OpenTelemetry Operator](https://opentelemetry.io/docs/kubernetes/operator/) out of the box. Applications instrumented with OTel SDKs send traces to the in-cluster OTel Collector, which forwards them to Tempo and stores them for 48 hours.
+
+### Architecture
+
+```
+App (OTel SDK)
+  └── OTel Collector (opentelemetry ns)     ← gRPC :4317 / HTTP :4318
+        ├── → Tempo (traces, 48h retention)
+        ├── → Prometheus (metrics via remote write)
+        └── → Loki (logs via OTLP HTTP)
+```
+
+### Querying traces in Grafana
+
+1. Open Grafana → **Explore** → select **Tempo** datasource
+2. Search by service name, trace ID, or span attributes
+3. Click a trace to see the full span waterfall with timing and attributes
+
+### Connecting your app
+
+Set these environment variables on your pods:
+
+| Variable | Value |
+|---|---|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `otel-collector-collector.<namespace>.svc.cluster.local:4317` (gRPC, no `http://`) |
+| `OTEL_SERVICE_NAME` | your service name (shows up in Tempo's service map) |
+
+For HTTP (e.g. Next.js), use port `4318` with `http://` prefix.
+
+> **Note:** The OTel Operator creates a service named `{cr-name}-collector`. With the default CR name `otel-collector`, the service is `otel-collector-collector` in the `opentelemetry` namespace.
+
+---
+
 ## Hubble UI
 
 Hubble is Cilium's network observability layer. It shows live network flows between pods,
 policy verdicts (allowed/dropped), and DNS queries.
 
-### Access
+> The Hubble UI is not exposed via an HTTPRoute in this cluster. Use the CLI below or run
+> `kubectl port-forward -n kube-system svc/hubble-ui 8080:80` to access the UI locally.
 
-```
-https://hubble.talos-tart-ha.talos-on-macos.com
-```
-
-### What you can see
-
-- **Service map** — live graph of which services are talking to each other
-- **Flow table** — real-time packet-level flows with source/dest pod, port, verdict
-- **Policy verdicts** — which flows were `FORWARDED`, `DROPPED`, or `REDIRECTED`
-- **DNS** — which pods are resolving which names
-
-### Useful filters
-
-In the Hubble UI flow table:
-
-| Filter | What to type |
-|---|---|
-| Flows from pulse namespace | `namespace=pulse` |
-| Dropped flows only | `verdict=DROPPED` |
-| Flows to a specific service | `to-service=auth-service` |
-| DNS traffic | `protocol=DNS` |
-
-### CLI alternative
+### CLI
 
 ```bash
 # Stream live flows from your Mac

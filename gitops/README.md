@@ -22,7 +22,8 @@ gitops/
 │   ├── cert-manager/               ← cert-manager HelmRelease + namespace
 │   ├── cert-manager-config/        ← ClusterIssuers + wildcard cert (after CRDs)
 │   ├── argocd/                     ← ArgoCD HelmRelease + HTTPRoute
-│   └── monitoring/                 ← kube-prometheus-stack, Loki, Promtail, HTTPRoutes
+│   ├── otel/                       ← OTel Operator HelmRelease
+│   └── monitoring/                 ← kube-prometheus-stack, Loki, Promtail, Tempo, HTTPRoutes
 │
 └── apps/                           ← your applications live here
     └── kustomization.yaml
@@ -47,6 +48,10 @@ Flux watches git → applies clusters/tart-lab/
                          │    └─ applies infrastructure/cert-manager-config/
                          │         ├─ ClusterIssuers     (needs cert-manager CRDs ✓)
                          │         └─ wildcard-local     Certificate resource
+                         │
+                         ├─ Kustomization: otel-collector  (dependsOn: infrastructure)
+                         │    └─ applies infrastructure/otel-collector/
+                         │         └─ OpenTelemetryCollector CR (needs OTel Operator CRDs ✓)
                          │
                          └─ Kustomization: apps  (dependsOn: infrastructure)
                               └─ applies apps/
@@ -94,9 +99,20 @@ Flux watches git → applies clusters/tart-lab/
 | `kube-prometheus-stack` | `HelmRelease` | Prometheus + Grafana + Alertmanager + node-exporter |
 | `loki` | `HelmRelease` | Loki v3 single-binary (emptyDir, dev mode) |
 | `promtail` | `HelmRelease` | Log shipper on every node → Loki |
+| `tempo` | `HelmRelease` | Grafana Tempo distributed tracing backend (48h retention) |
 | `grafana` / `prometheus` / `alertmanager` | `HTTPRoute` | Expose via Gateway |
 
 > **Talos note**: Loki uses `extraVolumes` to mount an `emptyDir` at `/var/loki` because Talos enforces `readOnlyRootFilesystem` on all containers. The monitoring namespace has `pod-security.kubernetes.io/enforce: privileged` to allow node-exporter's host access.
+
+### OTel (`infrastructure/otel/` + `otel-collector/`)
+
+| Resource | Kind | Description |
+|----------|------|-------------|
+| `opentelemetry-operator` | `HelmRelease` | OTel Operator — manages Collector CRs |
+| `otel-collector` | `OpenTelemetryCollector` | Collector pipeline: OTLP in → Tempo + Prometheus + Loki out |
+
+> The `otel-collector` Kustomization has `dependsOn: infrastructure` so the Collector CR is applied
+> only after the OTel Operator CRDs are registered (same pattern as `infrastructure-config` for cert-manager).
 
 ---
 
@@ -187,6 +203,8 @@ HelmReleases use semver ranges rather than exact pinning, to allow patch-level a
 | kube-prometheus-stack | `>=65.0.0 <100.0.0` |
 | loki | `>=6.0.0 <7.0.0` |
 | promtail | `>=6.0.0 <7.0.0` |
+| tempo | `>=1.0.0 <2.0.0` |
+| opentelemetry-operator | `>=0.100.0 <1.0.0` |
 
 To lock to exact versions, replace the range with the specific version string.
 

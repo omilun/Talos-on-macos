@@ -28,8 +28,9 @@
 │  │   ├── argo-events        (operator)                 │ │
 │  │   ├── argocd             (HelmRelease + HTTPRoute)  │ │
 │  │   ├── buildkit           (buildkitd daemon)         │ │
+│  │   ├── otel               (OTel Operator)            │ │
 │  │   └── monitoring         (kube-prometheus-stack +   │ │
-│  │                           Loki + Promtail)          │ │
+│  │                           Loki + Promtail + Tempo)  │ │
 │  └─────────────────────────────────────────────────────┘ │
 │                                                          │
 │  ┌─────────────── ArgoCD (app workloads) ─────────────┐ │
@@ -79,8 +80,9 @@ gitops/
 │   ├── cloudnativepg/
 │   ├── harbor/                 (deploys Zot — name is legacy)
 │   ├── kubelet-csr-approver/
-│   ├── monitoring/
+│   ├── monitoring/             (Prometheus, Grafana, Loki, Tempo)
 │   ├── networking/
+│   ├── otel/                   (OTel Operator)
 │   └── sources/
 └── apps/                       ← user workloads (ArgoCD-managed)
     ├── project.yaml            ← ArgoCD AppProject
@@ -150,8 +152,8 @@ Developer push → GitHub webhook
               └── Sensor  →  triggers pulse-build WorkflowTemplate
                     └── Argo Workflows DAG
                           ├── build auth-service      (BuildKit)
-                          ├── build task-service      (BuildKit)
-                          ├── build notification-svc  (BuildKit)
+                          ├── build longterm-service  (BuildKit)
+                          ├── build daily-service     (BuildKit)
                           └── build frontend          (BuildKit)
                                 └── push images: registry.../sha-<7char>
                                       └── create-pr step
