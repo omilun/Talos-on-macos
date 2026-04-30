@@ -37,7 +37,7 @@ spec:
                 - name: subpath
                   value: auth-service
                 - name: sha
-                  value: "{{workflow.arguments.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.commit_sha}}"
 
           - name: build-longterm
             template: buildkit-build
@@ -48,7 +48,7 @@ spec:
                 - name: subpath
                   value: longterm-service
                 - name: sha
-                  value: "{{workflow.arguments.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.commit_sha}}"
 
           - name: build-daily
             template: buildkit-build
@@ -59,7 +59,7 @@ spec:
                 - name: subpath
                   value: daily-service
                 - name: sha
-                  value: "{{workflow.arguments.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.commit_sha}}"
 
           - name: build-frontend
             template: buildkit-build
@@ -70,7 +70,7 @@ spec:
                 - name: subpath
                   value: frontend
                 - name: sha
-                  value: "{{workflow.arguments.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.commit_sha}}"
 
           # After all builds succeed, open a PR in the infra repo
           - name: open-pr
@@ -79,7 +79,7 @@ spec:
             arguments:
               parameters:
                 - name: sha
-                  value: "{{workflow.arguments.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.commit_sha}}"
 
     # ── BuildKit build: connects to persistent buildkitd daemon ────────────
     # No privileged context needed here — only the daemon pod needs it.
