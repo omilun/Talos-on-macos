@@ -1,9 +1,17 @@
-# RBAC for Argo Workflows CI jobs
+# RBAC for Argo Workflows CI jobs and Argo Events sensor
 ---
+# Argo Workflows job runner
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argo-workflows-sa
+  namespace: argo
+---
+# Argo Events sensor — submits Workflows on GitHub push events
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-events-sa
   namespace: argo
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -19,6 +27,18 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argo-events-sensor
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflows"]
+    verbs: ["create"]
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflowtemplates"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: argo-workflows-ci
@@ -29,4 +49,17 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: argo-workflows-sa
+    namespace: argo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argo-events-sensor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argo-events-sensor
+subjects:
+  - kind: ServiceAccount
+    name: argo-events-sa
     namespace: argo

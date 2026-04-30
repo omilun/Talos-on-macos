@@ -1,94 +1,177 @@
-# Argo Workflows CI pipeline for pulse app
-# Builds auth-service + longterm-service + daily-service + frontend with Kaniko
-# Trigger: manually or via webhook/cron
+# Argo Workflows CI pipeline for Pulse
+# Triggered by: Argo Events (GitHub push webhook)
+# Steps:
+#   1. Build all 4 services in parallel using BuildKit (replaces archived Kaniko)
+#   2. After all builds succeed, open a GitHub PR updating image tags in infra repo
+#
+# Required secrets (one-time manual setup):
+#   kubectl create secret generic github-token -n argo --from-literal=token=<PAT>
+#   kubectl create secret docker-registry registry-credentials -n buildkit \
+#     --docker-server=registry.talos-tart-ha.talos-on-macos.com \
+#     --docker-username=<user> --docker-password=<password>
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: pulse-build
   namespace: argo
 spec:
-  entrypoint: build-all
+  entrypoint: pipeline
   serviceAccountName: argo-workflows-sa
-  volumes:
-    - name: docker-config
-      secret:
-        secretName: harbor-registry-secret
-        items:
-          - key: .dockerconfigjson
-            path: config.json
-    - name: workspace
-      emptyDir: {}
+  arguments:
+    parameters:
+      - name: commit_sha
+        value: "unknown"
 
   templates:
-    # ─── entry: build all services in parallel ─────────────────────────────
-    - name: build-all
+
+    # ── Entry: build all services in parallel, then open PR ────────────────
+    - name: pipeline
       dag:
         tasks:
-          - name: auth-service
-            template: kaniko-build
+          - name: build-auth
+            template: buildkit-build
             arguments:
               parameters:
-                - name: context
-                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
-                - name: context_sub_path
-                  value: pulse-main/auth-service
-                - name: destination
-                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/auth-service:latest
-          - name: longterm-service
-            template: kaniko-build
-            arguments:
-              parameters:
-                - name: context
-                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
-                - name: context_sub_path
-                  value: pulse-main/longterm-service
-                - name: destination
-                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/longterm-service:latest
-          - name: daily-service
-            template: kaniko-build
-            arguments:
-              parameters:
-                - name: context
-                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
-                - name: context_sub_path
-                  value: pulse-main/daily-service
-                - name: destination
-                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/daily-service:latest
-          - name: frontend
-            template: kaniko-build
-            arguments:
-              parameters:
-                - name: context
-                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
-                - name: context_sub_path
-                  value: pulse-main/frontend
-                - name: destination
-                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/frontend:latest
+                - name: image
+                  value: auth-service
+                - name: subpath
+                  value: auth-service
+                - name: sha
+                  value: "{{workflow.arguments.parameters.commit_sha}}"
 
-    # ─── Kaniko build template ─────────────────────────────────────────────
-    - name: kaniko-build
+          - name: build-longterm
+            template: buildkit-build
+            arguments:
+              parameters:
+                - name: image
+                  value: longterm-service
+                - name: subpath
+                  value: longterm-service
+                - name: sha
+                  value: "{{workflow.arguments.parameters.commit_sha}}"
+
+          - name: build-daily
+            template: buildkit-build
+            arguments:
+              parameters:
+                - name: image
+                  value: daily-service
+                - name: subpath
+                  value: daily-service
+                - name: sha
+                  value: "{{workflow.arguments.parameters.commit_sha}}"
+
+          - name: build-frontend
+            template: buildkit-build
+            arguments:
+              parameters:
+                - name: image
+                  value: frontend
+                - name: subpath
+                  value: frontend
+                - name: sha
+                  value: "{{workflow.arguments.parameters.commit_sha}}"
+
+          # After all builds succeed, open a PR in the infra repo
+          - name: open-pr
+            template: create-pr
+            dependencies: [build-auth, build-longterm, build-daily, build-frontend]
+            arguments:
+              parameters:
+                - name: sha
+                  value: "{{workflow.arguments.parameters.commit_sha}}"
+
+    # ── BuildKit build: connects to persistent buildkitd daemon ────────────
+    # No privileged context needed here — only the daemon pod needs it.
+    - name: buildkit-build
       inputs:
         parameters:
-          - name: context
-          - name: context_sub_path
-          - name: destination
+          - name: image       # e.g. auth-service
+          - name: subpath     # subdirectory in the pulse repo
+          - name: sha         # full commit SHA
       container:
-        image: gcr.io/kaniko-project/executor:latest
+        image: moby/buildkit:v0.19.0
+        command: [buildctl]
         args:
-          - --context={{inputs.parameters.context}}
-          - --context-sub-path={{inputs.parameters.context_sub_path}}
-          - --dockerfile=Dockerfile
-          - --destination={{inputs.parameters.destination}}
-          - --skip-tls-verify
-          - --skip-tls-verify-pull
-          - --cache=false
-        volumeMounts:
-          - name: docker-config
-            mountPath: /kaniko/.docker
+          - --addr=tcp://buildkitd.buildkit.svc.cluster.local:1234
+          - build
+          - --frontend=dockerfile.v0
+          # BuildKit fetches source directly from GitHub — no local clone needed
+          - --opt=context=https://github.com/omilun/pulse.git#main:{{inputs.parameters.subpath}}
+          - --opt=filename=Dockerfile
+          - --output
+          - type=image,name=registry.talos-tart-ha.talos-on-macos.com/pulse/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true
         resources:
           requests:
-            memory: 512Mi
-            cpu: 500m
+            memory: 256Mi
+            cpu: 200m
           limits:
-            memory: 2Gi
+            memory: 1Gi
             cpu: 1000m
+
+    # ── PR creator: updates image tags in infra repo and opens a PR ────────
+    - name: create-pr
+      inputs:
+        parameters:
+          - name: sha
+      script:
+        image: alpine/git:latest
+        command: [sh]
+        env:
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: github-token
+                key: token
+          - name: COMMIT_SHA
+            value: "{{inputs.parameters.sha}}"
+        source: |
+          set -e
+          apk add --no-cache curl > /dev/null 2>&1
+
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          BRANCH="chore/update-pulse-${SHORT_SHA}"
+          REPO="omilun/Talos-on-macos"
+          REGISTRY="registry.talos-tart-ha.talos-on-macos.com/pulse"
+
+          echo "Opening PR for sha-${SHORT_SHA}..."
+
+          # Clone infra repo
+          git clone --depth=1 \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" \
+            /tmp/infra
+          cd /tmp/infra
+
+          git config user.email "ci@cluster.local"
+          git config user.name "Pulse CI"
+          git checkout -b "${BRANCH}"
+
+          # Update image tags in all four deployment manifests
+          for svc in auth-service longterm-service daily-service frontend; do
+            manifest="gitops/apps/pulse/deploy/${svc}.yaml"
+            if [ -f "${manifest}" ]; then
+              sed -i \
+                "s|${REGISTRY}/${svc}:[a-zA-Z0-9._-]*|${REGISTRY}/${svc}:sha-${SHORT_SHA}|g" \
+                "${manifest}"
+              echo "  updated ${manifest}"
+            fi
+          done
+
+          git add gitops/apps/pulse/deploy/
+          git commit -m "chore: update pulse images to sha-${SHORT_SHA}"
+          git push origin "${BRANCH}"
+
+          # Create PR via GitHub API
+          curl -sf -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${REPO}/pulls" \
+            -d "{
+              \"title\": \"chore: deploy pulse sha-${SHORT_SHA}\",
+              \"body\": \"Automated deployment PR\n\nUpdates all Pulse service image tags to \`sha-${SHORT_SHA}\`.\n\nCommit: ${COMMIT_SHA}\",
+              \"head\": \"${BRANCH}\",
+              \"base\": \"main\"
+            }"
+
+          echo "PR created for sha-${SHORT_SHA}"
+

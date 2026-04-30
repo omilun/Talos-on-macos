@@ -1,0 +1,91 @@
+# buildkitd — persistent BuildKit daemon for cluster-wide image builds.
+#
+# Workflow step pods connect via TCP (no privileged required on step pods).
+# Only this daemon pod needs privileged for kernel-level overlay filesystem.
+#
+# Manual one-time setup (registry credentials):
+#   kubectl create secret docker-registry registry-credentials \
+#     -n buildkit \
+#     --docker-server=registry.talos-tart-ha.talos-on-macos.com \
+#     --docker-username=<user> \
+#     --docker-password=<password>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buildkitd-config
+  namespace: buildkit
+data:
+  buildkitd.toml: |
+    [registry."registry.talos-tart-ha.talos-on-macos.com"]
+      insecure = true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildkitd
+  namespace: buildkit
+  labels:
+    app: buildkitd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buildkitd
+  template:
+    metadata:
+      labels:
+        app: buildkitd
+    spec:
+      containers:
+        - name: buildkitd
+          image: moby/buildkit:v0.19.0
+          args:
+            - --addr=tcp://0.0.0.0:1234
+            - --config=/etc/buildkit/buildkitd.toml
+          ports:
+            - containerPort: 1234
+              protocol: TCP
+          securityContext:
+            privileged: true
+          readinessProbe:
+            exec:
+              command: [buildctl, debug, workers]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 200m
+            limits:
+              memory: 2Gi
+              cpu: 2000m
+          volumeMounts:
+            - name: config
+              mountPath: /etc/buildkit
+            - name: registry-credentials
+              mountPath: /root/.docker
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: buildkitd-config
+        - name: registry-credentials
+          secret:
+            secretName: registry-credentials
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buildkitd
+  namespace: buildkit
+spec:
+  selector:
+    app: buildkitd
+  ports:
+    - port: 1234
+      targetPort: 1234
+      protocol: TCP

@@ -1,0 +1,48 @@
+# Argo Events — Sensor for pulse CI.
+#
+# Watches the pulse-github EventSource and triggers the pulse-build
+# WorkflowTemplate on every push to main, passing the commit SHA.
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: pulse-ci
+  namespace: argo
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+  dependencies:
+    - name: pulse-push
+      eventSourceName: pulse-github
+      eventName: pulse-push
+      filters:
+        data:
+          # Only trigger on pushes to main branch
+          - path: body.ref
+            type: string
+            value:
+              - refs/heads/main
+  triggers:
+    - template:
+        name: trigger-pulse-build
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: pulse-build-
+                namespace: argo
+              spec:
+                workflowTemplateRef:
+                  name: pulse-build
+                arguments:
+                  parameters:
+                    - name: commit_sha
+                      value: "placeholder"
+          # Map the GitHub push event's commit SHA into the workflow parameter
+          parameters:
+            - src:
+                dependencyName: pulse-push
+                dataKey: body.after
+              dest: spec.arguments.parameters.0.value

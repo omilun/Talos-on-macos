@@ -1,0 +1,9 @@
+# buildkit namespace — privileged PSA required for buildkitd
+# Only the buildkitd daemon pod needs privileged; workflow step pods do not.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: buildkit
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged

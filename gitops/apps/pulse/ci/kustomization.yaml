@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
   - rbac.yaml
   - workflow-template.yaml
+  - eventsource.yaml
+  - sensor.yaml
+  - httproute.yaml

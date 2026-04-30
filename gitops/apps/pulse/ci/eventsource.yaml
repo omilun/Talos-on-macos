@@ -1,0 +1,40 @@
+# Argo Events — GitHub webhook EventSource for the pulse repo.
+#
+# Listens on port 12000 for push events from GitHub.
+# GitHub webhook setup (one-time):
+#   URL:    https://events.talos-tart-ha.talos-on-macos.com/pulse/push
+#   Secret: value of the 'secret' key in github-webhook-secret
+#   Events: Just the push event
+#
+# Required secret:
+#   kubectl create secret generic github-webhook-secret \
+#     -n argo --from-literal=secret=$(openssl rand -hex 32)
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: pulse-github
+  namespace: argo
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  github:
+    pulse-push:
+      owner: omilun
+      repository: pulse
+      webhook:
+        endpoint: /pulse/push
+        port: "12000"
+        method: POST
+      events:
+        - push
+      apiToken:
+        name: github-token
+        key: token
+      webhookSecret:
+        name: github-webhook-secret
+        key: secret
+      insecure: false
+      active: true
+      contentType: json

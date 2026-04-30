@@ -12,5 +12,7 @@ resources:
   - cloudnativepg
   - harbor
   - argo-workflows
+  - argo-events
   - argocd
   - monitoring
+  - buildkit

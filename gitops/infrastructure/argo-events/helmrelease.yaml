@@ -1,0 +1,32 @@
+# Argo Events — managed by Flux
+# Event-driven workflow automation. Watches GitHub webhooks and triggers
+# Argo Workflows when commits land on the pulse repo.
+# Installed in the 'argo' namespace alongside Argo Workflows.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: argo-events
+  namespace: argo
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: argo-events
+      version: ">=2.4.0 <3.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: argo
+        namespace: flux-system
+      interval: 24h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    crds:
+      install: true
+    configs:
+      jetStreamPersistence:
+        enabled: false
