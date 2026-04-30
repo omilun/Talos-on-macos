@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/omilun/Talos-on-macos
     targetRevision: main
-    path: gitops/apps/pulse/deploy
+    path: gitops/example-apps/pulse/deploy
   destination:
     server: https://kubernetes.default.svc
     namespace: pulse

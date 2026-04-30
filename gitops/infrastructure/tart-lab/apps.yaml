@@ -1,4 +1,4 @@
-# clusters/tart-lab/apps.yaml
+# infrastructure/tart-lab/apps.yaml
 # Flux Kustomization: reconciles user applications after infrastructure is ready.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -10,7 +10,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./gitops/apps
+  path: ./gitops/example-apps
   prune: true
   dependsOn:
     - name: infrastructure

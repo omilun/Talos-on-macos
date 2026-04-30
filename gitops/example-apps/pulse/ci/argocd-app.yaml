@@ -10,9 +10,9 @@ metadata:
 spec:
   project: apps
   source:
-    repoURL: https://github.com/omilun/tart-lab
+    repoURL: https://github.com/omilun/Talos-on-macos
     targetRevision: main
-    path: gitops/apps/pulse-ci
+    path: gitops/example-apps/pulse/ci
   destination:
     server: https://kubernetes.default.svc
     namespace: argo
