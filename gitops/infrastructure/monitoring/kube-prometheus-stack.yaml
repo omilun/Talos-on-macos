@@ -98,6 +98,8 @@ spec:
         ruleSelectorNilUsesHelmValues: false
         # emptyDir for dev — replace with storageSpec for persistence
         storageSpec: {}
+        # Enable remote write receiver for OTel Collector to push metrics
+        enableRemoteWriteReceiver: true
 
     # ── Alertmanager ───────────────────────────────────────────────────────────
     alertmanager:
