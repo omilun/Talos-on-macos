@@ -1,0 +1,13 @@
+# EventBus — NATS-based message bus required by Argo Events.
+# One EventBus per namespace is sufficient; EventSources and Sensors
+# in the same namespace share it automatically.
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: default
+  namespace: argo
+spec:
+  nats:
+    native:
+      replicas: 1
+      auth: none
