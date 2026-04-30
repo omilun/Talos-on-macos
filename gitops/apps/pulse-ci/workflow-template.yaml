@@ -1,5 +1,5 @@
 # Argo Workflows CI pipeline for pulse app
-# Builds backend + frontend images with Kaniko and pushes to Harbor
+# Builds auth-service + longterm-service + daily-service + frontend with Kaniko
 # Trigger: manually or via webhook/cron
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
@@ -20,20 +20,40 @@ spec:
       emptyDir: {}
 
   templates:
-    # ─── entry: fan-out backend + frontend in parallel ─────────────────────
+    # ─── entry: build all services in parallel ─────────────────────────────
     - name: build-all
       dag:
         tasks:
-          - name: backend
+          - name: auth-service
             template: kaniko-build
             arguments:
               parameters:
                 - name: context
                   value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
                 - name: context_sub_path
-                  value: pulse-main/backend
+                  value: pulse-main/auth-service
                 - name: destination
-                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/backend:latest
+                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/auth-service:latest
+          - name: longterm-service
+            template: kaniko-build
+            arguments:
+              parameters:
+                - name: context
+                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
+                - name: context_sub_path
+                  value: pulse-main/longterm-service
+                - name: destination
+                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/longterm-service:latest
+          - name: daily-service
+            template: kaniko-build
+            arguments:
+              parameters:
+                - name: context
+                  value: "https://codeload.github.com/omilun/pulse/tar.gz/refs/heads/main"
+                - name: context_sub_path
+                  value: pulse-main/daily-service
+                - name: destination
+                  value: registry.talos-tart-ha.talos-on-macos.com/pulse/daily-service:latest
           - name: frontend
             template: kaniko-build
             arguments:
