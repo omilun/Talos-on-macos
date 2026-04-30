@@ -137,6 +137,7 @@ $GATEWAY_IP  registry.talos-tart-ha.talos-on-macos.com
 $GATEWAY_IP  events.talos-tart-ha.talos-on-macos.com
 $GATEWAY_IP  pulse.talos-tart-ha.talos-on-macos.com
 $GATEWAY_IP  api.pulse.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  flux.talos-tart-ha.talos-on-macos.com
 EOF
 ```
 
@@ -189,6 +190,16 @@ kubectl -n argocd get application
 kubectl -n argo get eventbus,eventsource,sensor
 kubectl -n buildkit get pods
 ```
+
+### 6 · Open the dashboards
+
+| Service | URL | Credentials |
+|---|---|---|
+| Flux UI (Weave GitOps) | https://flux.talos-tart-ha.talos-on-macos.com | `admin` / `flux-admin` |
+| ArgoCD | https://argocd.talos-tart-ha.talos-on-macos.com | `admin` / see secret |
+| Grafana | https://grafana.talos-tart-ha.talos-on-macos.com | `admin` / `prom-operator` |
+| Argo Workflows | https://workflows.talos-tart-ha.talos-on-macos.com | — |
+| Zot Registry | https://registry.talos-tart-ha.talos-on-macos.com | no auth |
 
 ---
 

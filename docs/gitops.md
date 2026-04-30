@@ -27,6 +27,7 @@ gitops/
 │   ├── argocd/              ← ArgoCD
 │   ├── monitoring/          ← kube-prometheus-stack + Loki + Promtail
 │   ├── buildkit/            ← buildkitd daemon for cluster-native CI
+│   ├── weave-gitops/        ← Flux UI dashboard (Weave GitOps)
 │   └── kubelet-csr-approver/
 │
 └── apps/                    ← layer 3: user workloads (ArgoCD Application objects)
@@ -213,3 +214,24 @@ Common causes of a stuck KS:
 - A Deployment in the KS is not becoming `Ready` (health check timeout = 15m)
 - A missing Secret that a volume mount depends on
 - CRDs not yet installed when a CR referencing them is applied (fix with `dependsOn`)
+
+---
+
+## Flux UI — Weave GitOps
+
+The cluster ships with [Weave GitOps](https://docs.gitops.weave.works/) — a browser dashboard
+for Flux maintained by the Flux team.
+
+**URL:** https://flux.talos-tart-ha.talos-on-macos.com  
+**Login:** `admin` / `flux-admin`
+
+What you can see:
+- All Flux Kustomizations and their sync status / last applied revision
+- HelmReleases and chart versions
+- GitRepository / HelmRepository / OCIRepository sources
+- Runtime — Flux controller pods and versions
+- Violations tab (policy, if applicable)
+
+> **Note:** Weave GitOps v0.38.0 uses `v1` Flux APIs (GitRepository, Kustomization, HelmRelease).
+> Older Capacitor v0.4.x only supports the deprecated `v1beta2` APIs and will show an empty
+> dashboard on this cluster — that's why we use Weave GitOps instead.
