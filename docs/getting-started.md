@@ -101,32 +101,96 @@ Open dashboards (all HTTPS with green padlock):
 | Alertmanager | https://alertmanager.talos-tart-ha.talos-on-macos.com |
 | Zot Registry | https://registry.talos-tart-ha.talos-on-macos.com |
 
-## CI pipeline secrets (one-time setup)
+> All `*.talos-tart-ha.talos-on-macos.com` subdomains are covered by the wildcard DNS
+> configured by `setup-dns.sh` — no per-hostname `/etc/hosts` entries needed.
+> If DNS stops resolving after a VM restart, re-run `bash setup-dns.sh`.
 
-After deploy, create two secrets in the `argo` namespace before the pulse CI pipeline can run:
+---
+
+## Post-deploy checklist
+
+`tofu apply` handles the cluster, GitOps, DNS, and TLS automatically. The steps below are
+**one-time manual steps** required to activate the CI pipeline and observability tools.
+
+### 1 · Verify DNS resolves
 
 ```bash
-# GitHub PAT with repo scope — used by create-pr to open PRs in this repo
-kubectl create secret generic github-token -n argo \
-  --from-literal=token=<your-PAT>
+bash setup-dns.sh
+```
 
-# HMAC secret — must match what you configure as the webhook secret in GitHub
+This configures `/etc/resolver/talos-on-macos.com` (wildcard — covers all subdomains),
+updates CoreDNS with the Gateway IP, and trusts the cluster CA in macOS Keychain.
+Re-run this if you get DNS failures after a VM restart.
+
+If the resolver approach doesn't work on your machine, fall back to `/etc/hosts`:
+
+```bash
+GATEWAY_IP=192.168.64.192   # verify with: kubectl get gateway -n networking main-gateway -o jsonpath='{.status.addresses[0].value}'
+sudo tee -a /etc/hosts <<EOF
+$GATEWAY_IP  argocd.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  workflows.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  grafana.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  prometheus.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  alertmanager.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  loki.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  registry.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  events.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  pulse.talos-tart-ha.talos-on-macos.com
+$GATEWAY_IP  api.pulse.talos-tart-ha.talos-on-macos.com
+EOF
+```
+
+### 2 · Set KUBECONFIG
+
+```bash
+export KUBECONFIG=~/Codes/Personal/tart-lab/Talos-on-macos/_out/kubeconfig.yaml
+# Add to ~/.zshrc or ~/.bash_profile to make it permanent
+```
+
+### 3 · Create CI pipeline secrets
+
+Required for the pulse CI conveyor belt to build images and open PRs:
+
+```bash
+# GitHub PAT — needs repo scope (push, PR creation, webhook validation)
+kubectl create secret generic github-token -n argo \
+  --from-literal=token=<your-GitHub-PAT>
+
+# HMAC secret — copy this value to GitHub webhook settings (step 4)
+WEBHOOK_SECRET=$(openssl rand -hex 32)
 kubectl create secret generic github-webhook-secret -n argo \
-  --from-literal=secret=<hex-secret>
+  --from-literal=secret=$WEBHOOK_SECRET
+echo "Webhook secret: $WEBHOOK_SECRET"
 ```
 
 No registry credentials needed — Zot runs without authentication.
 
-### GitHub webhook setup
+### 4 · Configure GitHub webhook
 
-In the `omilun/pulse` repo settings → Webhooks → Add webhook:
+In `omilun/pulse` repo → **Settings → Webhooks → Add webhook**:
 
 | Field | Value |
 |---|---|
 | Payload URL | `https://events.talos-tart-ha.talos-on-macos.com/pulse/push` |
 | Content type | `application/json` |
-| Secret | the same `<hex-secret>` used above |
-| Events | Just the **push** event |
+| Secret | value from `$WEBHOOK_SECRET` (step 3) |
+| Events | **Just the push event** |
+
+### 5 · Verify everything is up
+
+```bash
+# All Flux KS should show Ready=True
+flux get kustomizations -A
+
+# ArgoCD apps should be Synced + Healthy
+kubectl -n argocd get application
+
+# CI pipeline components
+kubectl -n argo get eventbus,eventsource,sensor
+kubectl -n buildkit get pods
+```
+
+---
 
 ## Tear down
 

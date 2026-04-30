@@ -106,7 +106,7 @@ info "DNS cache flushed"
 
 echo ""
 echo "Testing DNS resolution:"
-for svc in argocd grafana prometheus alertmanager loki workflows registry pulse api.pulse; do
+for svc in argocd grafana prometheus alertmanager loki workflows registry pulse api.pulse events; do
   RESULT=$(dscacheutil -q host -a name "${svc}.${DOMAIN}" 2>/dev/null | awk '/ip_address/{print $2}')
   if [ "$RESULT" = "$GATEWAY_IP" ]; then
     info "  ${svc}.${DOMAIN} → $RESULT"
