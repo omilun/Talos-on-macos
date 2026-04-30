@@ -55,14 +55,11 @@ spec:
         tls:
           insecure: true
 
-      # Logs → Loki
-      loki:
-        endpoint: "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
+      # Logs → Loki via OTLP HTTP (Loki 3.x+ native OTLP ingestion)
+      otlphttp/loki:
+        endpoint: "http://loki-gateway.monitoring.svc.cluster.local/otlp"
         tls:
           insecure: true
-        default_labels_enabled:
-          exporter: false
-          job: true
 
       # Debug (low verbosity — keeps logs clean)
       debug:
@@ -83,4 +80,4 @@ spec:
         logs:
           receivers: [otlp]
           processors: [memory_limiter, resource, batch]
-          exporters: [loki]
+          exporters: [otlphttp/loki]
