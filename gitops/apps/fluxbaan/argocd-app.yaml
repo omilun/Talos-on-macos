@@ -1,0 +1,24 @@
+# ArgoCD Application — fluxbaan
+# Deploys Fluxbaan (GitOps visualizer dashboard) into the fluxbaan namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fluxbaan
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: apps
+  source:
+    repoURL: https://github.com/omilun/Talos-on-macos
+    targetRevision: main
+    path: gitops/apps/fluxbaan/deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fluxbaan
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
