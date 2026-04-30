@@ -1,0 +1,7 @@
+# infrastructure/otel-collector/kustomization.yaml
+# Applied by the otel-collector Flux Kustomization (depends on infrastructure).
+# Kept separate so the OTel Operator CRDs exist before this CR is applied.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - collector.yaml

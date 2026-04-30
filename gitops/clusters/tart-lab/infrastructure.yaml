@@ -40,4 +40,23 @@ spec:
   timeout: 10m
   dependsOn:
     - name: infrastructure
+---
+# otel-collector: OpenTelemetryCollector CR — depends on infrastructure so
+# the OTel Operator HelmRelease installs the CRDs before this CR is applied.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: otel-collector
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/infrastructure/otel-collector
+  prune: true
+  wait: true
+  timeout: 10m
+  dependsOn:
+    - name: infrastructure
 
