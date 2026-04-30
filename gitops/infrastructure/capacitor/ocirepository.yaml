@@ -1,6 +1,6 @@
 # Capacitor — Flux UI dashboard
 # Pulls manifests from OCI, auto-updates every 12h when new releases are available
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: capacitor
