@@ -1,0 +1,57 @@
+# longterm-service deployment + service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulse-longterm
+  namespace: pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulse-longterm
+  template:
+    metadata:
+      labels:
+        app: pulse-longterm
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry-secret
+      containers:
+        - name: api
+          image: registry.talos-tart-ha.talos-on-macos.com/pulse/longterm-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: longterm-db-app
+                  key: uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pulse-jwt-secret
+                  key: secret
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulse-longterm
+  namespace: pulse
+spec:
+  selector:
+    app: pulse-longterm
+  ports:
+    - port: 8082

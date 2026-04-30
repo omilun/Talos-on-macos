@@ -1,0 +1,21 @@
+# Single HTTPRoute — all traffic goes to the frontend.
+# The Next.js app handles API proxying via server-side route handlers:
+#   /auth/*       → app/auth/[route].ts  → pulse-auth:8081
+#   /api/lt/*     → app/api/lt/[...path]/route.ts  → pulse-longterm:8082
+#   /api/daily/*  → app/api/daily/[...path]/route.ts → pulse-daily:8083
+#   /*            → Next.js pages
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pulse-frontend
+  namespace: pulse
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: networking
+  hostnames:
+    - "pulse.talos-tart-ha.talos-on-macos.com"
+  rules:
+    - backendRefs:
+        - name: pulse-frontend
+          port: 3000

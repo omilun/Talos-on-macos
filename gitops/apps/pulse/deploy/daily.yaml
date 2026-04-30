@@ -1,0 +1,57 @@
+# daily-service deployment + service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulse-daily
+  namespace: pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulse-daily
+  template:
+    metadata:
+      labels:
+        app: pulse-daily
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry-secret
+      containers:
+        - name: api
+          image: registry.talos-tart-ha.talos-on-macos.com/pulse/daily-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: daily-db-app
+                  key: uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pulse-jwt-secret
+                  key: secret
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulse-daily
+  namespace: pulse
+spec:
+  selector:
+    app: pulse-daily
+  ports:
+    - port: 8083

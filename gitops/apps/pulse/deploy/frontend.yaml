@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulse-frontend
+  namespace: pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulse-frontend
+  template:
+    metadata:
+      labels:
+        app: pulse-frontend
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry-secret
+      containers:
+        - name: frontend
+          image: registry.talos-tart-ha.talos-on-macos.com/pulse/frontend:latest  # built by Argo Workflows + Kaniko, pushed to Zot registry
+          ports:
+            - containerPort: 3000
+          env:
+            - name: AUTH_URL
+              value: "http://pulse-auth:8081"
+            - name: LONGTERM_URL
+              value: "http://pulse-longterm:8082"
+            - name: DAILY_URL
+              value: "http://pulse-daily:8083"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulse-frontend
+  namespace: pulse
+spec:
+  selector:
+    app: pulse-frontend
+  ports:
+    - port: 3000

@@ -1,0 +1,57 @@
+# auth-service deployment + service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulse-auth
+  namespace: pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulse-auth
+  template:
+    metadata:
+      labels:
+        app: pulse-auth
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry-secret
+      containers:
+        - name: api
+          image: registry.talos-tart-ha.talos-on-macos.com/pulse/auth-service:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: auth-db-app     # created by CloudNativePG
+                  key: uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pulse-jwt-secret
+                  key: secret
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulse-auth
+  namespace: pulse
+spec:
+  selector:
+    app: pulse-auth
+  ports:
+    - port: 8081
