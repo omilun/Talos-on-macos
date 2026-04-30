@@ -27,6 +27,12 @@ spec:
               value: "http://pulse-longterm:8082"
             - name: DAILY_URL
               value: "http://pulse-daily:8083"
+            - name: OTEL_SERVICE_NAME
+              value: pulse-frontend
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.opentelemetry.svc.cluster.local:4318
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: deployment.environment=production
           resources:
             requests:
               cpu: 50m

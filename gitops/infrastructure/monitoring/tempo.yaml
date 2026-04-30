@@ -1,0 +1,67 @@
+# Grafana Tempo — distributed tracing backend (single-binary mode)
+#
+# Receives traces via OTLP from the OTel Collector.
+# Retention: 48h (dev cluster — data not needed beyond 2 days)
+# Storage: emptyDir (lost on pod restart, intentional for dev)
+#
+# Internal endpoints (no external ingress):
+#   4317 — OTLP gRPC
+#   4318 — OTLP HTTP
+#   3200 — Tempo query API (used by Grafana datasource)
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+  namespace: monitoring
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: tempo
+      version: ">=1.24.0 <2.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      interval: 24h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  values:
+    tempo:
+      retention: 48h
+
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: "0.0.0.0:4317"
+            http:
+              endpoint: "0.0.0.0:4318"
+
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /tmp/tempo/traces
+          wal:
+            path: /tmp/tempo/wal
+
+      # Compactor controls block-level retention
+      compactor:
+        ring:
+          kvstore:
+            store: memberlist
+        compaction:
+          block_retention: 48h
+
+    persistence:
+      enabled: false   # emptyDir — intentional for dev cluster
+
+    serviceMonitor:
+      enabled: true
+      interval: 30s

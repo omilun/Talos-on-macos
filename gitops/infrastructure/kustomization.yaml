@@ -16,3 +16,4 @@ resources:
   - argocd
   - monitoring
   - buildkit
+  - otel

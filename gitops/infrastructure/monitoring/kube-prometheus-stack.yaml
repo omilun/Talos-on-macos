@@ -55,6 +55,31 @@ spec:
           access: proxy
           isDefault: false
 
+        - name: Tempo
+          type: tempo
+          url: http://tempo.monitoring.svc.cluster.local:3200
+          access: proxy
+          isDefault: false
+          jsonData:
+            httpMethod: GET
+            serviceMap:
+              datasourceUid: prometheus
+            nodeGraph:
+              enabled: true
+            tracesToLogsV2:
+              datasourceUid: loki
+              spanStartTimeShift: "-1m"
+              spanEndTimeShift: "1m"
+              filterByTraceID: true
+              filterBySpanID: false
+              customQuery: true
+              query: '{job=~".+"} |= "${__trace.traceId}"'
+            tracesToMetrics:
+              datasourceUid: prometheus
+              queries:
+                - name: Request rate
+                  query: 'rate(traces_spanmetrics_calls_total{$$__tags}[5m])'
+
       persistence:
         enabled: false   # emptyDir for dev
 
