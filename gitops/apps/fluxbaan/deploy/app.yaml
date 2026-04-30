@@ -16,7 +16,7 @@ spec:
       serviceAccountName: fluxbaan-backend
       containers:
       - name: backend
-        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-backend:latest
+        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-backend:sha-cfb4cff
         ports:
         - containerPort: 8080
 ---
@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-frontend:latest
+        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-frontend:sha-cfb4cff
         ports:
         - containerPort: 3000
         env:

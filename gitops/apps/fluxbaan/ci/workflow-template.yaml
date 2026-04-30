@@ -8,8 +8,8 @@ spec:
   serviceAccountName: argo-workflows-sa
   arguments:
     parameters:
-      - name: commit_sha
-        value: "main"
+      - name: sha
+        value: "master"
 
   templates:
     - name: pipeline
@@ -24,7 +24,7 @@ spec:
                 - name: subpath
                   value: backend
                 - name: sha
-                  value: "{{workflow.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.sha}}"
 
           - name: build-frontend
             template: buildkit-build
@@ -35,7 +35,7 @@ spec:
                 - name: subpath
                   value: frontend
                 - name: sha
-                  value: "{{workflow.parameters.commit_sha}}"
+                  value: "{{workflow.parameters.sha}}"
 
     - name: buildkit-build
       inputs:
@@ -52,4 +52,4 @@ spec:
           - --frontend=dockerfile.v0
           - --opt=context=https://github.com/omilun/Fluxbaan.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
-          - --output=type=image,name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:latest,push=true,oci-mediatypes=true
+          - --output=type=image,name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,oci-mediatypes=true
