@@ -158,8 +158,10 @@ sudo rm -f /etc/resolver/talos-on-macos.com
 | | |
 |---|---|
 | 🚀 [Getting started](docs/getting-started.md) | Prerequisites, config, first deploy |
-| 🏛 [Architecture](docs/architecture.md) | Stack layers, networking, DNS/TLS |
+| 🏛 [Architecture](docs/architecture.md) | Stack layers, networking, DNS/TLS, CI/CD conveyor belt |
+| 🔄 [GitOps](docs/gitops.md) | Flux 3-layer pattern, admin vs user separation, adding modules |
+| 📊 [Observability](docs/observability.md) | Grafana, Prometheus, Loki, Alertmanager, Hubble UI |
 | 🧩 [Node pools](docs/node-pools.md) | CP as worker, tainted pools, infra nodes, recipes |
-| 📦 [Deploy apps](docs/deploy-apps.md) | Add apps with ArgoCD, CloudNativePG, HTTPS — with the pulse demo app |
+| 📦 [Deploy apps](docs/deploy-apps.md) | Add apps with ArgoCD, CloudNativePG, HTTPS, cluster-native CI |
 | 🌍 [Multi-cluster](docs/multi-cluster.md) | Running multiple clusters side by side |
-| 🔧 [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+| 🔧 [Troubleshooting](docs/troubleshooting.md) | VMs, Flux, Argo Events, BuildKit, Zot, ArgoCD |
