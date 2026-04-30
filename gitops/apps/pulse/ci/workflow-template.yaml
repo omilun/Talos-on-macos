@@ -101,7 +101,8 @@ spec:
           - --opt=filename=Dockerfile
           - --output
           # oci-mediatypes=true required for Zot registry (OCI Distribution Spec v1.1)
-          - type=image,name=registry.talos-tart-ha.talos-on-macos.com/pulse/{{inputs.parameters.image}}:latest,push=true,registry.insecure=true,oci-mediatypes=true
+          # Push both sha tag (for GitOps PR) and :latest (for convenience)
+          - type=image,name=registry.talos-tart-ha.talos-on-macos.com/pulse/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
         resources:
           requests:
             memory: 256Mi
