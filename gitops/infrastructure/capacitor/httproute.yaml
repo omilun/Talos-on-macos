@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: capacitor
+  namespace: flux-system
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: networking
+  hostnames:
+    - "capacitor.talos-tart-ha.talos-on-macos.com"
+  rules:
+    - backendRefs:
+        - name: capacitor
+          port: 9000
