@@ -27,7 +27,6 @@ gitops/
 │   ├── argocd/              ← ArgoCD
 │   ├── monitoring/          ← kube-prometheus-stack + Loki + Promtail
 │   ├── buildkit/            ← buildkitd daemon for cluster-native CI
-│   ├── weave-gitops/        ← Flux UI dashboard (Weave GitOps)
 │   └── kubelet-csr-approver/
 │
 └── apps/                    ← layer 3: user workloads (ArgoCD Application objects)
@@ -217,21 +216,27 @@ Common causes of a stuck KS:
 
 ---
 
-## Flux UI — Weave GitOps
+## Viewing Flux Resources
 
-The cluster ships with [Weave GitOps](https://docs.gitops.weave.works/) — a browser dashboard
-for Flux maintained by the Flux team.
+Use the CLI — no web UI is currently available (Capacitor v0.12+ is a CLI binary only;
+Weave GitOps v0.38.0 has API incompatibilities with Flux v2).
 
-**URL:** https://flux.talos-tart-ha.talos-on-macos.com  
-**Login:** `admin` / `flux-admin`
+```bash
+# Overview of all Flux resources across all namespaces
+flux get all -A
 
-What you can see:
-- All Flux Kustomizations and their sync status / last applied revision
-- HelmReleases and chart versions
-- GitRepository / HelmRepository / OCIRepository sources
-- Runtime — Flux controller pods and versions
-- Violations tab (policy, if applicable)
+# Kustomizations only
+flux get kustomizations -A
 
-> **Note:** Weave GitOps v0.38.0 uses `v1` Flux APIs (GitRepository, Kustomization, HelmRelease).
-> Older Capacitor v0.4.x only supports the deprecated `v1beta2` APIs and will show an empty
-> dashboard on this cluster — that's why we use Weave GitOps instead.
+# HelmReleases only
+flux get helmreleases -A
+
+# Sources (GitRepository, HelmRepository, OCIRepository)
+flux get sources all -A
+
+# Force reconcile (e.g. after a git push without waiting)
+flux reconcile kustomization flux-system --with-source
+
+# View Flux controller logs
+flux logs --all-namespaces --follow
+```
