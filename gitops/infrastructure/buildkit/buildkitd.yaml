@@ -73,6 +73,7 @@ spec:
         - name: registry-credentials
           secret:
             secretName: registry-credentials
+            optional: true
             items:
               - key: .dockerconfigjson
                 path: config.json
