@@ -1,4 +1,4 @@
-# infrastructure/tart-lab/infrastructure.yaml
+# clusters/tart-lab/infrastructure.yaml
 # Flux Kustomizations for infrastructure — split into two layers:
 #
 #  1. infrastructure     — HelmRepositories, HelmReleases (cert-manager, ArgoCD,
