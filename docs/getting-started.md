@@ -95,10 +95,38 @@ Open dashboards (all HTTPS with green padlock):
 | Service | URL |
 |---|---|
 | ArgoCD | https://argocd.talos-tart-ha.talos-on-macos.com |
+| Argo Workflows | https://workflows.talos-tart-ha.talos-on-macos.com |
 | Grafana | https://grafana.talos-tart-ha.talos-on-macos.com (admin / change-me) |
 | Prometheus | https://prometheus.talos-tart-ha.talos-on-macos.com |
 | Alertmanager | https://alertmanager.talos-tart-ha.talos-on-macos.com |
-| Loki | https://loki.talos-tart-ha.talos-on-macos.com |
+| Zot Registry | https://registry.talos-tart-ha.talos-on-macos.com |
+
+## CI pipeline secrets (one-time setup)
+
+After deploy, create two secrets in the `argo` namespace before the pulse CI pipeline can run:
+
+```bash
+# GitHub PAT with repo scope — used by create-pr to open PRs in this repo
+kubectl create secret generic github-token -n argo \
+  --from-literal=token=<your-PAT>
+
+# HMAC secret — must match what you configure as the webhook secret in GitHub
+kubectl create secret generic github-webhook-secret -n argo \
+  --from-literal=secret=<hex-secret>
+```
+
+No registry credentials needed — Zot runs without authentication.
+
+### GitHub webhook setup
+
+In the `omilun/pulse` repo settings → Webhooks → Add webhook:
+
+| Field | Value |
+|---|---|
+| Payload URL | `https://events.talos-tart-ha.talos-on-macos.com/pulse/push` |
+| Content type | `application/json` |
+| Secret | the same `<hex-secret>` used above |
+| Events | Just the **push** event |
 
 ## Tear down
 

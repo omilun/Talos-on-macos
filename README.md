@@ -10,6 +10,9 @@ This repo brings that production-grade OS to your Mac — fully automated, fully
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Cilium](https://img.shields.io/badge/Cilium-eBPF-F8C517?style=for-the-badge&logo=cilium&logoColor=black)](https://cilium.io)
 [![Flux](https://img.shields.io/badge/Flux-GitOps-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
+[![ArgoCD](https://img.shields.io/badge/ArgoCD-GitOps-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)](https://argo-cd.readthedocs.io)
+[![Argo Workflows](https://img.shields.io/badge/Argo_Workflows-CI-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)](https://argoproj.github.io/workflows)
+[![Zot](https://img.shields.io/badge/Zot-OCI_Registry-1F77B4?style=for-the-badge)](https://zotregistry.dev)
 [![Tart](https://img.shields.io/badge/Tart-Apple_Silicon-000000?style=for-the-badge&logo=apple&logoColor=white)](https://tart.run)
 
 </div>
@@ -70,6 +73,12 @@ no paid tools, no cloud account, no manual steps. Just your Mac and open-source 
 - 📊 Grafana · Prometheus · Alertmanager · Loki — dashboards load on first visit, no setup wizard
 - 🔭 Hubble UI — live network flow visualisation across the cluster
 
+**Container Registry**
+- 📦 **Zot OCI Registry** — arm64-native, CNCF project, no auth required. Push images from your Mac or from within the cluster. UI at `https://registry.talos-tart-ha.talos-on-macos.com`
+
+**Cluster-native CI**
+- 🏗 **Argo Events + Argo Workflows + BuildKit** — push to your app repo, a webhook triggers a parallel multi-service build inside the cluster, images land in Zot, a PR updates the deploy manifests, ArgoCD rolls out. No GitHub Actions runners, no cloud build quotas.
+
 **The deal**
 - 💸 **100% free** — Tart, Talos, OpenTofu, Cilium, Flux — all open source, no licences, no cloud bills
 - 🔒 **Stays on your Mac** — no tunnels, no DuckDNS, no exposure to the internet
@@ -127,6 +136,8 @@ https://prometheus.talos-tart-ha.talos-on-macos.com 🔒 green padlock
 │   │   cert-manager  →  private CA  →  wildcard TLS cert     │    │    │
 │   │   Cilium Gateway  →  HTTPS :443  →  HTTPRoutes          │    │    │
 │   │   ArgoCD · Grafana · Prometheus · Loki                  │    │    │
+│   │   Zot OCI Registry (arm64-native, no auth)              │    │    │
+│   │   Argo Events · Argo Workflows · BuildKit               │    │    │
 │   └── Configures macOS: /etc/resolver + Keychain CA trust        │    │
 └───────────────────────────────────────────────────────────────────────┘
 ```

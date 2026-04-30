@@ -39,8 +39,9 @@ my-app/
 │   ├── deployment.yaml
 │   ├── service.yaml
 │   └── httproute.yaml
-└── .github/workflows/build.yaml   ← builds and pushes images to ghcr.io
 ```
+
+Images are built by the cluster-native CI pipeline (see [Cluster-native CI](#cluster-native-ci-with-argo-events--buildkit) below) and pushed to the in-cluster Zot registry. Reference them as `registry.talos-tart-ha.talos-on-macos.com/my-app:sha-<7char>` in your manifests.
 
 ### 2 · Add an ArgoCD Application in this repo
 
@@ -198,9 +199,72 @@ EOF
 ## Demo app: pulse
 
 The [pulse](https://github.com/omilun/pulse) app is a working example of this entire pattern:
-Go API + Next.js frontend + CloudNativePG + GitHub Actions CI + ArgoCD deploy.
+Go API + Next.js frontend + CloudNativePG + cluster-native CI + ArgoCD deploy.
 
 | URL | Service |
 |---|---|
-| https://pulse.talos-on-macos.com | Next.js frontend |
-| https://api.pulse.talos-on-macos.com | Go API |
+| https://pulse.talos-tart-ha.talos-on-macos.com | Next.js frontend |
+| https://api.pulse.talos-tart-ha.talos-on-macos.com | Go API |
+
+CI is handled by the in-cluster conveyor belt — a push to `omilun/pulse` triggers Argo Events,
+which runs a BuildKit DAG in Argo Workflows, pushes images to Zot, then opens a PR here to
+update image tags. Merge the PR and ArgoCD rolls out the new pods.
+
+---
+
+## Cluster-native CI with Argo Events + BuildKit
+
+The cluster runs a full CI conveyor belt. No GitHub Actions runners required.
+
+### How a build flows
+
+1. Developer pushes to `omilun/pulse` main branch
+2. GitHub sends webhook → `https://events.talos-tart-ha.talos-on-macos.com/pulse/push`
+3. Argo Events EventSource validates the HMAC secret and publishes to EventBus (NATS)
+4. Sensor picks up the event, triggers the `pulse-build` WorkflowTemplate with the commit SHA
+5. Argo Workflows runs a DAG: 4 parallel BuildKit builds (auth-service, task-service, notification-service, frontend)
+6. Images tagged `sha-<7char>` are pushed to `registry.talos-tart-ha.talos-on-macos.com`
+7. A `create-pr` step clones this repo, patches image tags in `apps/pulse/deploy/`, and opens a PR
+8. Merge the PR → ArgoCD auto-syncs → pods roll out with the new SHA-tagged images
+
+### Required secrets (one-time setup)
+
+```bash
+# GitHub PAT with repo scope (for opening PRs)
+kubectl create secret generic github-token -n argo \
+  --from-literal=token=<PAT>
+
+# HMAC secret — must match the webhook secret configured in GitHub
+kubectl create secret generic github-webhook-secret -n argo \
+  --from-literal=secret=<hex>
+
+# No registry credentials needed — Zot has no auth
+```
+
+### Zot Registry
+
+All images live at `registry.talos-tart-ha.talos-on-macos.com`.
+
+```bash
+# Push from your Mac
+docker push registry.talos-tart-ha.talos-on-macos.com/my-app:latest
+
+# Pull inside the cluster
+image: registry.talos-tart-ha.talos-on-macos.com/my-app:sha-abc1234
+```
+
+Browse the registry UI at `https://registry.talos-tart-ha.talos-on-macos.com`.
+
+### CI resources in git
+
+The CI pipeline lives in `gitops/apps/pulse/ci/` in this repo:
+
+| File | Purpose |
+|---|---|
+| `eventbus.yaml` | NATS EventBus |
+| `eventsource.yaml` | GitHub webhook receiver |
+| `sensor.yaml` | Wires EventBus → WorkflowTemplate trigger |
+| `workflow-template.yaml` | 4-parallel BuildKit DAG + create-pr step |
+| `httproute.yaml` | Exposes the EventSource webhook endpoint |
+| `rbac.yaml` | ServiceAccount + roles for workflow steps |
+| `argocd-app.yaml` | ArgoCD Application for the CI resources (created by Flux) |
