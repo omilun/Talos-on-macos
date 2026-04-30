@@ -16,4 +16,4 @@ resources:
   - argocd
   - monitoring
   - buildkit
-  - capacitor
+  - weave-gitops

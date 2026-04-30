@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: weave-gitops
+  namespace: flux-system
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: networking
+  hostnames:
+    - "flux.talos-tart-ha.talos-on-macos.com"
+  rules:
+    - backendRefs:
+        - name: weave-gitops
+          port: 9001
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
