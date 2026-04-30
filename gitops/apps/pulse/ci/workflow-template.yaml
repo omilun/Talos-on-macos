@@ -100,7 +100,8 @@ spec:
           - --opt=context=https://github.com/omilun/pulse.git#main:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
           - --output
-          - type=image,name=registry.talos-tart-ha.talos-on-macos.com/pulse/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true
+          # oci-mediatypes=true required for Zot registry (OCI Distribution Spec v1.1)
+          - type=image,name=registry.talos-tart-ha.talos-on-macos.com/pulse/{{inputs.parameters.image}}:latest,push=true,registry.insecure=true,oci-mediatypes=true
         resources:
           requests:
             memory: 256Mi
