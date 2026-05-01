@@ -1,16 +1,16 @@
-# Argo Workflows — lint + test pipeline for Fluxbaan.
+# Argo Workflows — lint + test pipeline for Xafrun.
 #
 # Runs in parallel:
 #   - go vet, go test (race) on the Go backend
 #   - npm ci, npm run lint, vitest, npm run build on the Next.js frontend
 #   - helm lint on the chart
 #
-# Triggered as a step inside fluxbaan-build (pre-build) and stand-alone via
+# Triggered as a step inside xafrun-build (pre-build) and stand-alone via
 # the Argo Workflows UI.
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: fluxbaan-test
+  name: xafrun-test
   namespace: argo
 spec:
   entrypoint: test
@@ -57,8 +57,8 @@ spec:
             set -euo pipefail
             apk add --no-cache git ca-certificates >/dev/null
             git clone --depth=1 --branch="{{inputs.parameters.sha}}" \
-              https://github.com/omilun/Fluxbaan.git /src 2>/dev/null \
-              || git clone https://github.com/omilun/Fluxbaan.git /src \
+              https://github.com/omilun/Xafrun.git /src 2>/dev/null \
+              || git clone https://github.com/omilun/Xafrun.git /src \
               && (cd /src && git checkout "{{inputs.parameters.sha}}")
             cd /src/backend
             go vet ./...
@@ -82,7 +82,7 @@ spec:
           - |
             set -euo pipefail
             apk add --no-cache git >/dev/null
-            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            git clone --depth=1 https://github.com/omilun/Xafrun.git /src
             cd /src && git checkout "{{inputs.parameters.sha}}"
             cd /src/frontend
             npm ci --prefer-offline --no-audit --fund=false
@@ -104,10 +104,10 @@ spec:
           - |
             set -euo pipefail
             apk add --no-cache git >/dev/null
-            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            git clone --depth=1 https://github.com/omilun/Xafrun.git /src
             cd /src && git checkout "{{inputs.parameters.sha}}"
-            helm lint /src/charts/fluxbaan
-            helm template /src/charts/fluxbaan --debug > /tmp/render.yaml
+            helm lint /src/charts/xafrun
+            helm template /src/charts/xafrun --debug > /tmp/render.yaml
             wc -l /tmp/render.yaml
         resources:
           requests: {memory: 128Mi, cpu: 100m}

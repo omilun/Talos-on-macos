@@ -1,7 +1,7 @@
-# Argo Events — GitHub webhook EventSource for the Fluxbaan repo.
+# Argo Events — GitHub webhook EventSource for the Xafrun repo.
 #
 # Listens on port 12000 for push events. GitHub webhook setup (one-time):
-#   URL:    https://events.talos-tart-ha.talos-on-macos.com/fluxbaan/push
+#   URL:    https://events.talos-tart-ha.talos-on-macos.com/xafrun/push
 #   Secret: value of the 'secret' key in github-webhook-secret
 #   Events: push, create
 #
@@ -10,7 +10,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
-  name: fluxbaan-github
+  name: xafrun-github
   namespace: argo
 spec:
   service:
@@ -18,11 +18,11 @@ spec:
       - port: 12000
         targetPort: 12000
   github:
-    fluxbaan-push:
+    xafrun-push:
       owner: omilun
-      repository: Fluxbaan
+      repository: Xafrun
       webhook:
-        endpoint: /fluxbaan/push
+        endpoint: /xafrun/push
         port: "12000"
         method: POST
       events:

@@ -1,4 +1,4 @@
-# Argo Workflows — build the Fluxbaan MkDocs Material site and ship it as
+# Argo Workflows — build the Xafrun MkDocs Material site and ship it as
 # a tiny nginx image to the in-cluster Zot. The accompanying Deployment
 # (in deploy/docs.yaml) reads `:latest` of that image.
 #
@@ -6,7 +6,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: fluxbaan-docs
+  name: xafrun-docs
   namespace: argo
 spec:
   entrypoint: pipeline
@@ -44,7 +44,7 @@ spec:
           - |
             set -euo pipefail
             apk add --no-cache git >/dev/null
-            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            git clone --depth=1 https://github.com/omilun/Xafrun.git /src
             cd /src && git checkout "{{inputs.parameters.sha}}"
             mkdocs build --strict --site-dir /workspace/site
             du -sh /workspace/site
@@ -74,7 +74,7 @@ spec:
               --frontend=dockerfile.v0 \
               --local context=/workspace \
               --local dockerfile=/tmp \
-              --output=type=image,\"name=registry.talos-tart-ha.talos-on-macos.com/fluxbaan-docs:sha-{{inputs.parameters.sha}},registry.talos-tart-ha.talos-on-macos.com/fluxbaan-docs:latest\",push=true,registry.insecure=true,oci-mediatypes=true
+              --output=type=image,\"name=registry.talos-tart-ha.talos-on-macos.com/xafrun-docs:sha-{{inputs.parameters.sha}},registry.talos-tart-ha.talos-on-macos.com/xafrun-docs:latest\",push=true,registry.insecure=true,oci-mediatypes=true
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 

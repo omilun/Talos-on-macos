@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: fluxbaan-build
+  name: xafrun-build
   namespace: argo
 spec:
   entrypoint: pipeline
@@ -18,7 +18,7 @@ spec:
         tasks:
           - name: test
             templateRef:
-              name: fluxbaan-test
+              name: xafrun-test
               template: test
             arguments:
               parameters:
@@ -29,7 +29,7 @@ spec:
             dependencies: [test]
             arguments:
               parameters:
-                - {name: image,   value: fluxbaan-backend}
+                - {name: image,   value: xafrun-backend}
                 - {name: subpath, value: backend}
                 - {name: sha,     value: "{{workflow.parameters.sha}}"}
 
@@ -38,27 +38,27 @@ spec:
             dependencies: [test]
             arguments:
               parameters:
-                - {name: image,   value: fluxbaan-frontend}
+                - {name: image,   value: xafrun-frontend}
                 - {name: subpath, value: frontend}
                 - {name: sha,     value: "{{workflow.parameters.sha}}"}
 
           - name: scan-backend
             templateRef:
-              name: fluxbaan-scan
+              name: xafrun-scan
               template: trivy-image
             dependencies: [build-backend]
             arguments:
               parameters:
-                - {name: image, value: "fluxbaan-backend:sha-{{workflow.parameters.sha}}"}
+                - {name: image, value: "xafrun-backend:sha-{{workflow.parameters.sha}}"}
 
           - name: scan-frontend
             templateRef:
-              name: fluxbaan-scan
+              name: xafrun-scan
               template: trivy-image
             dependencies: [build-frontend]
             arguments:
               parameters:
-                - {name: image, value: "fluxbaan-frontend:sha-{{workflow.parameters.sha}}"}
+                - {name: image, value: "xafrun-frontend:sha-{{workflow.parameters.sha}}"}
 
     # ── BuildKit build: connects to the persistent cluster-wide buildkitd ────
     - name: buildkit-build
@@ -74,7 +74,7 @@ spec:
           - --addr=tcp://buildkitd.buildkit.svc.cluster.local:1234
           - build
           - --frontend=dockerfile.v0
-          - --opt=context=https://github.com/omilun/Fluxbaan.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
+          - --opt=context=https://github.com/omilun/Xafrun.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
           - --output=type=image,name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
         resources:

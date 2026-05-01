@@ -1,6 +1,6 @@
-# Argo Workflows — release pipeline for Fluxbaan.
+# Argo Workflows — release pipeline for Xafrun.
 #
-# Triggered when a tag `v*.*.*` is pushed to omilun/Fluxbaan.
+# Triggered when a tag `v*.*.*` is pushed to omilun/Xafrun.
 # Produces, in parallel:
 #   1. tagged + :latest backend image (multi-arch via BuildKit)
 #   2. tagged + :latest frontend image
@@ -15,7 +15,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: fluxbaan-release
+  name: xafrun-release
   namespace: argo
 spec:
   entrypoint: release
@@ -35,7 +35,7 @@ spec:
             template: buildkit-tagged
             arguments:
               parameters:
-                - {name: image, value: fluxbaan-backend}
+                - {name: image, value: xafrun-backend}
                 - {name: subpath, value: backend}
                 - {name: sha,     value: "{{workflow.parameters.sha}}"}
                 - {name: tag,     value: "{{workflow.parameters.tag}}"}
@@ -44,7 +44,7 @@ spec:
             template: buildkit-tagged
             arguments:
               parameters:
-                - {name: image, value: fluxbaan-frontend}
+                - {name: image, value: xafrun-frontend}
                 - {name: subpath, value: frontend}
                 - {name: sha,     value: "{{workflow.parameters.sha}}"}
                 - {name: tag,     value: "{{workflow.parameters.tag}}"}
@@ -54,14 +54,14 @@ spec:
             dependencies: [build-backend]
             arguments:
               parameters:
-                - {name: image, value: "fluxbaan-backend:{{workflow.parameters.tag}}"}
+                - {name: image, value: "xafrun-backend:{{workflow.parameters.tag}}"}
 
           - name: sign-frontend
             template: cosign-sign
             dependencies: [build-frontend]
             arguments:
               parameters:
-                - {name: image, value: "fluxbaan-frontend:{{workflow.parameters.tag}}"}
+                - {name: image, value: "xafrun-frontend:{{workflow.parameters.tag}}"}
 
           - name: helm-push
             template: helm-package-push
@@ -86,7 +86,7 @@ spec:
           - --addr=tcp://buildkitd.buildkit.svc.cluster.local:1234
           - build
           - --frontend=dockerfile.v0
-          - --opt=context=https://github.com/omilun/Fluxbaan.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
+          - --opt=context=https://github.com/omilun/Xafrun.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
           - --opt=platform=linux/amd64,linux/arm64
           - --output=type=image,\"name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:{{inputs.parameters.tag}},registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:latest\",push=true,registry.insecure=true,oci-mediatypes=true
@@ -124,7 +124,7 @@ spec:
           - |
             set -euo pipefail
             apk add --no-cache git >/dev/null
-            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            git clone --depth=1 https://github.com/omilun/Xafrun.git /src
             cd /src && git checkout "{{inputs.parameters.sha}}"
 
             # Strip leading "v" from chart version (semver).
@@ -134,10 +134,10 @@ spec:
             sed -i \
               -e "s/^version:.*/version: ${CHART_VER}/" \
               -e "s/^appVersion:.*/appVersion: \"${CHART_VER}\"/" \
-              /src/charts/fluxbaan/Chart.yaml
+              /src/charts/xafrun/Chart.yaml
 
-            helm package /src/charts/fluxbaan -d /tmp
-            helm push /tmp/fluxbaan-${CHART_VER}.tgz \
+            helm package /src/charts/xafrun -d /tmp
+            helm push /tmp/xafrun-${CHART_VER}.tgz \
               oci://registry.talos-tart-ha.talos-on-macos.com/charts
         env:
           - {name: VERSION, value: "{{inputs.parameters.tag}}"}

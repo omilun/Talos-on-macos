@@ -1,7 +1,7 @@
-# Argo Workflows — Trivy CVE scan for Fluxbaan images.
+# Argo Workflows — Trivy CVE scan for Xafrun images.
 #
 # Two entry templates:
-#   - trivy-image: scan a single image (used by fluxbaan-build)
+#   - trivy-image: scan a single image (used by xafrun-build)
 #   - scan-all:    scan both backend and frontend latest tags (used by the
 #                  nightly CronWorkflow)
 #
@@ -11,7 +11,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: fluxbaan-scan
+  name: xafrun-scan
   namespace: argo
 spec:
   entrypoint: scan-all
@@ -22,7 +22,7 @@ spec:
     - name: trivy-image
       inputs:
         parameters:
-          - name: image                  # e.g. fluxbaan-backend:sha-abc1234
+          - name: image                  # e.g. xafrun-backend:sha-abc1234
           - name: severity
             value: "CRITICAL,HIGH"
           - name: exitCode
@@ -52,11 +52,11 @@ spec:
             template: trivy-image
             arguments:
               parameters:
-                - {name: image,    value: "fluxbaan-backend:latest"}
+                - {name: image,    value: "xafrun-backend:latest"}
                 - {name: exitCode, value: "1"}
           - name: frontend
             template: trivy-image
             arguments:
               parameters:
-                - {name: image,    value: "fluxbaan-frontend:latest"}
+                - {name: image,    value: "xafrun-frontend:latest"}
                 - {name: exitCode, value: "1"}

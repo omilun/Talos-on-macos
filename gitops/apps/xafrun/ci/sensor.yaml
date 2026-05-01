@@ -1,23 +1,23 @@
-# Argo Events — Sensors for the Fluxbaan CI pipeline.
+# Argo Events — Sensors for the Xafrun CI pipeline.
 #
-# Two sensors share the same EventSource (fluxbaan-github):
-#   1. fluxbaan-ci      — runs fluxbaan-build on every push to master
-#                         (additionally runs fluxbaan-docs if docs/ or
+# Two sensors share the same EventSource (xafrun-github):
+#   1. xafrun-ci      — runs xafrun-build on every push to master
+#                         (additionally runs xafrun-docs if docs/ or
 #                          mkdocs.yml changed; see filter below)
-#   2. fluxbaan-release — runs fluxbaan-release on every tag create event
+#   2. xafrun-release — runs xafrun-release on every tag create event
 #                         matching v*.*.* (semver tags only)
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: fluxbaan-ci
+  name: xafrun-ci
   namespace: argo
 spec:
   template:
     serviceAccountName: argo-events-sa
   dependencies:
-    - name: fluxbaan-push
-      eventSourceName: fluxbaan-github
-      eventName: fluxbaan-push
+    - name: xafrun-push
+      eventSourceName: xafrun-github
+      eventName: xafrun-push
       filters:
         data:
           - path: body.ref
@@ -26,7 +26,7 @@ spec:
               - refs/heads/master
   triggers:
     - template:
-        name: trigger-fluxbaan-build
+        name: trigger-xafrun-build
         argoWorkflow:
           operation: submit
           source:
@@ -34,18 +34,18 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: fluxbaan-build-
+                generateName: xafrun-build-
                 namespace: argo
               spec:
                 workflowTemplateRef:
-                  name: fluxbaan-build
+                  name: xafrun-build
                 arguments:
                   parameters:
                     - name: sha
                       value: "placeholder"
           parameters:
             - src:
-                dependencyName: fluxbaan-push
+                dependencyName: xafrun-push
                 dataKey: body.after
               dest: spec.arguments.parameters.0.value
 
@@ -54,7 +54,7 @@ spec:
     # it). If you want to gate by changed paths, wire body.commits[*].modified
     # into a Sensor filter.
     - template:
-        name: trigger-fluxbaan-docs
+        name: trigger-xafrun-docs
         argoWorkflow:
           operation: submit
           source:
@@ -62,18 +62,18 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: fluxbaan-docs-
+                generateName: xafrun-docs-
                 namespace: argo
               spec:
                 workflowTemplateRef:
-                  name: fluxbaan-docs
+                  name: xafrun-docs
                 arguments:
                   parameters:
                     - name: sha
                       value: "placeholder"
           parameters:
             - src:
-                dependencyName: fluxbaan-push
+                dependencyName: xafrun-push
                 dataKey: body.after
               dest: spec.arguments.parameters.0.value
 
@@ -81,15 +81,15 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: fluxbaan-release
+  name: xafrun-release
   namespace: argo
 spec:
   template:
     serviceAccountName: argo-events-sa
   dependencies:
-    - name: fluxbaan-tag
-      eventSourceName: fluxbaan-github
-      eventName: fluxbaan-push
+    - name: xafrun-tag
+      eventSourceName: xafrun-github
+      eventName: xafrun-push
       filters:
         data:
           - path: body.ref_type
@@ -101,7 +101,7 @@ spec:
             value: ["^v[0-9]+\\.[0-9]+\\.[0-9]+$"]
   triggers:
     - template:
-        name: trigger-fluxbaan-release
+        name: trigger-xafrun-release
         argoWorkflow:
           operation: submit
           source:
@@ -109,22 +109,22 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: fluxbaan-release-
+                generateName: xafrun-release-
                 namespace: argo
               spec:
                 workflowTemplateRef:
-                  name: fluxbaan-release
+                  name: xafrun-release
                 arguments:
                   parameters:
                     - {name: tag, value: "placeholder-tag"}
                     - {name: sha, value: "placeholder-sha"}
           parameters:
             - src:
-                dependencyName: fluxbaan-tag
+                dependencyName: xafrun-tag
                 dataKey: body.ref
               dest: spec.arguments.parameters.0.value
             - src:
-                dependencyName: fluxbaan-tag
+                dependencyName: xafrun-tag
                 # GitHub `create` events for tags don't carry the SHA in
                 # `after`. Use `head_commit.id` from the followup push, or
                 # fall back to the ref name itself for BuildKit.

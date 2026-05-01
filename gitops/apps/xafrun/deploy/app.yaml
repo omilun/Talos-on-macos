@@ -1,33 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fluxbaan-backend
-  namespace: fluxbaan
+  name: xafrun-backend
+  namespace: xafrun
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fluxbaan-backend
+      app: xafrun-backend
   template:
     metadata:
       labels:
-        app: fluxbaan-backend
+        app: xafrun-backend
     spec:
-      serviceAccountName: fluxbaan-backend
+      serviceAccountName: xafrun-backend
       containers:
       - name: backend
-        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-backend:sha-c596574298aa98ef7075a6193c9c6ea7cb831893
+        image: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend:sha-c596574298aa98ef7075a6193c9c6ea7cb831893
         ports:
         - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fluxbaan-backend
-  namespace: fluxbaan
+  name: xafrun-backend
+  namespace: xafrun
 spec:
   selector:
-    app: fluxbaan-backend
+    app: xafrun-backend
   ports:
   - port: 8080
     targetPort: 8080
@@ -35,35 +35,35 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fluxbaan-frontend
-  namespace: fluxbaan
+  name: xafrun-frontend
+  namespace: xafrun
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fluxbaan-frontend
+      app: xafrun-frontend
   template:
     metadata:
       labels:
-        app: fluxbaan-frontend
+        app: xafrun-frontend
     spec:
       containers:
       - name: frontend
-        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-frontend:sha-c596574298aa98ef7075a6193c9c6ea7cb831893
+        image: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend:sha-c596574298aa98ef7075a6193c9c6ea7cb831893
         ports:
         - containerPort: 3000
         env:
         - name: BACKEND_URL
-          value: "http://fluxbaan-backend.fluxbaan.svc.cluster.local:8080"
+          value: "http://xafrun-backend.xafrun.svc.cluster.local:8080"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fluxbaan-frontend
-  namespace: fluxbaan
+  name: xafrun-frontend
+  namespace: xafrun
 spec:
   selector:
-    app: fluxbaan-frontend
+    app: xafrun-frontend
   ports:
   - port: 80
     targetPort: 3000

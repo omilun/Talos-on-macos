@@ -1,15 +1,15 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: fluxbaan
-  namespace: fluxbaan
+  name: xafrun
+  namespace: xafrun
 spec:
   parentRefs:
     - name: main-gateway
       namespace: networking
   hostnames:
-    - "fluxbaan.talos-tart-ha.talos-on-macos.com"
+    - "xafrun.talos-tart-ha.talos-on-macos.com"
   rules:
     - backendRefs:
-        - name: fluxbaan-frontend
+        - name: xafrun-frontend
           port: 80

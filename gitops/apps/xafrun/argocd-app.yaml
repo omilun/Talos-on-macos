@@ -1,9 +1,9 @@
-# ArgoCD Application — fluxbaan
-# Deploys Fluxbaan (GitOps visualizer dashboard) into the fluxbaan namespace.
+# ArgoCD Application — xafrun
+# Deploys Xafrun (GitOps visualizer dashboard) into the xafrun namespace.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: fluxbaan
+  name: xafrun
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "10"
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/omilun/Talos-on-macos
     targetRevision: main
-    path: gitops/apps/fluxbaan/deploy
+    path: gitops/apps/xafrun/deploy
   destination:
     server: https://kubernetes.default.svc
-    namespace: fluxbaan
+    namespace: xafrun
   syncPolicy:
     automated:
       prune: true
