@@ -26,7 +26,7 @@ rules:
     resources: ["deployments", "statefulsets", "daemonsets"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["namespaces", "services", "pods", "configmaps"]
+    resources: ["namespaces", "services", "pods", "configmaps", "nodes"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
