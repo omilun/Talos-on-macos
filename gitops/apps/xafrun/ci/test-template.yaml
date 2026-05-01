@@ -53,7 +53,8 @@ spec:
         image: alpine:3.21
         command: [sh, -c]
         args:
-          - echo "sandbox: go backend checks skipped (insufficient node memory for race detector)"
+          - |
+            echo "sandbox: backend checks skipped (insufficient node memory for Go race detector)"
         resources:
           requests: {memory: 64Mi, cpu: 50m}
           limits:   {memory: 128Mi, cpu: 100m}
