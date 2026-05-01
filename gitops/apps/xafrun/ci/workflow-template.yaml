@@ -76,7 +76,7 @@ spec:
           - --frontend=dockerfile.v0
           - --opt=context=https://github.com/omilun/Xafrun.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
-          - --output=type=image,name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
+          - --output=type=image,name=zot.registry.svc.cluster.local:5000/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
         resources:
           requests: {memory: 256Mi, cpu: 200m}
           limits:   {memory: 1Gi,   cpu: 1000m}

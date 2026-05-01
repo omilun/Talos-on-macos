@@ -39,7 +39,7 @@ spec:
               --no-progress \
               --ignore-unfixed \
               --insecure \
-              registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}
+              zot.registry.svc.cluster.local:5000/{{inputs.parameters.image}}
         resources:
           requests: {memory: 256Mi, cpu: 200m}
           limits:   {memory: 1Gi,   cpu: 1000m}
