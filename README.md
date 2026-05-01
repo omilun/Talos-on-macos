@@ -10,6 +10,7 @@ This repo brings that production-grade OS to your Mac — fully automated, fully
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.35-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Cilium](https://img.shields.io/badge/Cilium-eBPF-F8C517?style=for-the-badge&logo=cilium&logoColor=black)](https://cilium.io)
 [![Flux](https://img.shields.io/badge/Flux-GitOps-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)
+[![Xafrun](https://img.shields.io/badge/Xafrun-Flux_Dashboard-5468FF?style=for-the-badge&logo=flux&logoColor=white)](https://github.com/omilun/Xafrun)
 [![ArgoCD](https://img.shields.io/badge/ArgoCD-GitOps-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)](https://argo-cd.readthedocs.io)
 [![Argo Workflows](https://img.shields.io/badge/Argo_Workflows-CI-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)](https://argoproj.github.io/workflows)
 [![Zot](https://img.shields.io/badge/Zot-OCI_Registry-1F77B4?style=for-the-badge)](https://zotregistry.dev)
@@ -66,6 +67,7 @@ no paid tools, no cloud account, no manual steps. Just your Mac and open-source 
 
 **GitOps & automation**
 - 📦 **Flux + ArgoCD** — every component is in git, declarative, and self-healing. Break something? Git reset and reconcile.
+- 🔭 **[Xafrun](https://github.com/omilun/Xafrun)** — real-time visual dashboard for Flux CD. Watch Kustomizations, HelmReleases, GitRepositories and sources reconcile live, right inside the cluster.
 - 🤖 **One command deploy** — Talos image auto-downloaded, VMs created, cluster bootstrapped, DNS configured, CA trusted. You watch, it works.
 - �� **Flexible node pools** — want a tainted GPU pool? An infra-only CP? Two lines in `terraform.tfvars`.
 
@@ -136,7 +138,8 @@ https://prometheus.talos-tart-ha.talos-on-macos.com 🔒 green padlock
 │   ├── Bootstraps Flux ──────────────────────────────────────┐    │    │
 │   │   cert-manager  →  private CA  →  wildcard TLS cert     │    │    │
 │   │   Cilium Gateway  →  HTTPS :443  →  HTTPRoutes          │    │    │
-│   │   ArgoCD · Grafana · Prometheus · Loki · Tempo          │    │    │
+│   │   ArgoCD · Xafrun (Flux dashboard) · Grafana             │    │    │
+│   │   Prometheus · Loki · Tempo                             │    │    │
 │   │   OTel Operator · OTel Collector                        │    │    │
 │   │   Zot OCI Registry (arm64-native, no auth)              │    │    │
 │   │   Argo Events · Argo Workflows · BuildKit               │    │    │
