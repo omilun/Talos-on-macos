@@ -1,0 +1,62 @@
+# Argo Workflows — Trivy CVE scan for Fluxbaan images.
+#
+# Two entry templates:
+#   - trivy-image: scan a single image (used by fluxbaan-build)
+#   - scan-all:    scan both backend and frontend latest tags (used by the
+#                  nightly CronWorkflow)
+#
+# Severity threshold: CRITICAL,HIGH. Set exitCode=0 (non-blocking) for
+# build-pipeline use; the nightly CronWorkflow uses exitCode=1 and writes
+# a Slack/notification on failure (left as a TODO).
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fluxbaan-scan
+  namespace: argo
+spec:
+  entrypoint: scan-all
+  serviceAccountName: argo-workflows-sa
+
+  templates:
+    # ── Scan a single image (called per-build) ───────────────────────────────
+    - name: trivy-image
+      inputs:
+        parameters:
+          - name: image                  # e.g. fluxbaan-backend:sha-abc1234
+          - name: severity
+            value: "CRITICAL,HIGH"
+          - name: exitCode
+            value: "0"                   # 0 = report only, 1 = fail workflow
+      container:
+        image: aquasec/trivy:0.58.1
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            trivy image \
+              --severity {{inputs.parameters.severity}} \
+              --exit-code {{inputs.parameters.exitCode}} \
+              --no-progress \
+              --ignore-unfixed \
+              --insecure \
+              registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}
+        resources:
+          requests: {memory: 256Mi, cpu: 200m}
+          limits:   {memory: 1Gi,   cpu: 1000m}
+
+    # ── Scan all currently-deployed images (called by nightly cron) ──────────
+    - name: scan-all
+      dag:
+        tasks:
+          - name: backend
+            template: trivy-image
+            arguments:
+              parameters:
+                - {name: image,    value: "fluxbaan-backend:latest"}
+                - {name: exitCode, value: "1"}
+          - name: frontend
+            template: trivy-image
+            arguments:
+              parameters:
+                - {name: image,    value: "fluxbaan-frontend:latest"}
+                - {name: exitCode, value: "1"}

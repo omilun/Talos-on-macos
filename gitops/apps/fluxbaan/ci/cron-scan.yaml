@@ -1,0 +1,19 @@
+# Nightly Trivy CVE scan of the live Fluxbaan images.
+# Runs every day at 06:00 UTC; fails (non-zero) on CRITICAL or HIGH so the
+# Argo Workflows UI surfaces it on the dashboard.
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: fluxbaan-nightly-scan
+  namespace: argo
+spec:
+  schedule: "0 6 * * *"
+  timezone: "UTC"
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 7
+  workflowSpec:
+    workflowTemplateRef:
+      name: fluxbaan-scan
+    serviceAccountName: argo-workflows-sa
+    entrypoint: scan-all

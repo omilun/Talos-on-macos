@@ -1,0 +1,83 @@
+# Argo Workflows — build the Fluxbaan MkDocs Material site and ship it as
+# a tiny nginx image to the in-cluster Zot. The accompanying Deployment
+# (in deploy/docs.yaml) reads `:latest` of that image.
+#
+# Triggered automatically on push to master when docs/ or mkdocs.yml change.
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fluxbaan-docs
+  namespace: argo
+spec:
+  entrypoint: pipeline
+  serviceAccountName: argo-workflows-sa
+  arguments:
+    parameters:
+      - name: sha
+        value: "master"
+
+  templates:
+    - name: pipeline
+      dag:
+        tasks:
+          - name: build-site
+            template: mkdocs-build
+            arguments:
+              parameters:
+                - {name: sha, value: "{{workflow.parameters.sha}}"}
+
+          - name: package-image
+            template: buildkit-docs
+            dependencies: [build-site]
+            arguments:
+              parameters:
+                - {name: sha, value: "{{workflow.parameters.sha}}"}
+
+    # ── Build the static site into an emptyDir + smoke-check its size ────────
+    - name: mkdocs-build
+      inputs:
+        parameters: [{name: sha}]
+      container:
+        image: squidfunk/mkdocs-material:9.5.50
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            apk add --no-cache git >/dev/null
+            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            cd /src && git checkout "{{inputs.parameters.sha}}"
+            mkdocs build --strict --site-dir /workspace/site
+            du -sh /workspace/site
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # ── BuildKit: bake site/ into nginx:alpine and push ──────────────────────
+    # Inline Dockerfile via stdin to avoid needing the artefact in the repo.
+    - name: buildkit-docs
+      inputs:
+        parameters: [{name: sha}]
+      container:
+        image: moby/buildkit:v0.19.0
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            cat > /tmp/Dockerfile <<'EOF'
+            FROM nginx:1.27-alpine
+            COPY site /usr/share/nginx/html
+            RUN echo 'add_header X-Robots-Tag "all" always;' \
+                > /etc/nginx/conf.d/default.conf.d.headers || true
+            EOF
+            buildctl \
+              --addr=tcp://buildkitd.buildkit.svc.cluster.local:1234 \
+              build \
+              --frontend=dockerfile.v0 \
+              --local context=/workspace \
+              --local dockerfile=/tmp \
+              --output=type=image,\"name=registry.talos-tart-ha.talos-on-macos.com/fluxbaan-docs:sha-{{inputs.parameters.sha}},registry.talos-tart-ha.talos-on-macos.com/fluxbaan-docs:latest\",push=true,registry.insecure=true,oci-mediatypes=true
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+  volumes:
+    - name: workspace
+      emptyDir: {}

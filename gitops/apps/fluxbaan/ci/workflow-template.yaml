@@ -12,31 +12,55 @@ spec:
         value: "master"
 
   templates:
+    # ── Entry: lint+test → build images in parallel → vulnerability scan ─────
     - name: pipeline
       dag:
         tasks:
-          - name: build-backend
-            template: buildkit-build
+          - name: test
+            templateRef:
+              name: fluxbaan-test
+              template: test
             arguments:
               parameters:
-                - name: image
-                  value: fluxbaan-backend
-                - name: subpath
-                  value: backend
-                - name: sha
-                  value: "{{workflow.parameters.sha}}"
+                - {name: sha, value: "{{workflow.parameters.sha}}"}
+
+          - name: build-backend
+            template: buildkit-build
+            dependencies: [test]
+            arguments:
+              parameters:
+                - {name: image,   value: fluxbaan-backend}
+                - {name: subpath, value: backend}
+                - {name: sha,     value: "{{workflow.parameters.sha}}"}
 
           - name: build-frontend
             template: buildkit-build
+            dependencies: [test]
             arguments:
               parameters:
-                - name: image
-                  value: fluxbaan-frontend
-                - name: subpath
-                  value: frontend
-                - name: sha
-                  value: "{{workflow.parameters.sha}}"
+                - {name: image,   value: fluxbaan-frontend}
+                - {name: subpath, value: frontend}
+                - {name: sha,     value: "{{workflow.parameters.sha}}"}
 
+          - name: scan-backend
+            templateRef:
+              name: fluxbaan-scan
+              template: trivy-image
+            dependencies: [build-backend]
+            arguments:
+              parameters:
+                - {name: image, value: "fluxbaan-backend:sha-{{workflow.parameters.sha}}"}
+
+          - name: scan-frontend
+            templateRef:
+              name: fluxbaan-scan
+              template: trivy-image
+            dependencies: [build-frontend]
+            arguments:
+              parameters:
+                - {name: image, value: "fluxbaan-frontend:sha-{{workflow.parameters.sha}}"}
+
+    # ── BuildKit build: connects to the persistent cluster-wide buildkitd ────
     - name: buildkit-build
       inputs:
         parameters:
@@ -52,4 +76,7 @@ spec:
           - --frontend=dockerfile.v0
           - --opt=context=https://github.com/omilun/Fluxbaan.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
-          - --output=type=image,name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,oci-mediatypes=true
+          - --output=type=image,name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
+        resources:
+          requests: {memory: 256Mi, cpu: 200m}
+          limits:   {memory: 1Gi,   cpu: 1000m}

@@ -1,0 +1,147 @@
+# Argo Workflows — release pipeline for Fluxbaan.
+#
+# Triggered when a tag `v*.*.*` is pushed to omilun/Fluxbaan.
+# Produces, in parallel:
+#   1. tagged + :latest backend image (multi-arch via BuildKit)
+#   2. tagged + :latest frontend image
+#   3. cosign-signed digests for both (keyless via Sigstore Fulcio)
+#   4. Helm chart packaged and pushed as OCI artefact to the cluster Zot
+#
+# Required cluster secrets (one-time):
+#   kubectl create secret generic cosign-key -n argo \
+#     --from-file=cosign.key=./cosign.key
+#   (Or use keyless mode — recommended; the helm-push container needs
+#   `~/.docker/config.json` for Zot push, supplied via registry-credentials.)
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fluxbaan-release
+  namespace: argo
+spec:
+  entrypoint: release
+  serviceAccountName: argo-workflows-sa
+  arguments:
+    parameters:
+      - name: tag                          # e.g. v0.2.0
+        value: "v0.0.0"
+      - name: sha
+        value: "master"
+
+  templates:
+    - name: release
+      dag:
+        tasks:
+          - name: build-backend
+            template: buildkit-tagged
+            arguments:
+              parameters:
+                - {name: image, value: fluxbaan-backend}
+                - {name: subpath, value: backend}
+                - {name: sha,     value: "{{workflow.parameters.sha}}"}
+                - {name: tag,     value: "{{workflow.parameters.tag}}"}
+
+          - name: build-frontend
+            template: buildkit-tagged
+            arguments:
+              parameters:
+                - {name: image, value: fluxbaan-frontend}
+                - {name: subpath, value: frontend}
+                - {name: sha,     value: "{{workflow.parameters.sha}}"}
+                - {name: tag,     value: "{{workflow.parameters.tag}}"}
+
+          - name: sign-backend
+            template: cosign-sign
+            dependencies: [build-backend]
+            arguments:
+              parameters:
+                - {name: image, value: "fluxbaan-backend:{{workflow.parameters.tag}}"}
+
+          - name: sign-frontend
+            template: cosign-sign
+            dependencies: [build-frontend]
+            arguments:
+              parameters:
+                - {name: image, value: "fluxbaan-frontend:{{workflow.parameters.tag}}"}
+
+          - name: helm-push
+            template: helm-package-push
+            dependencies: [build-backend, build-frontend]
+            arguments:
+              parameters:
+                - {name: tag, value: "{{workflow.parameters.tag}}"}
+                - {name: sha, value: "{{workflow.parameters.sha}}"}
+
+    # ── BuildKit: build + push BOTH a versioned tag and :latest ──────────────
+    - name: buildkit-tagged
+      inputs:
+        parameters:
+          - name: image
+          - name: subpath
+          - name: sha
+          - name: tag
+      container:
+        image: moby/buildkit:v0.19.0
+        command: [buildctl]
+        args:
+          - --addr=tcp://buildkitd.buildkit.svc.cluster.local:1234
+          - build
+          - --frontend=dockerfile.v0
+          - --opt=context=https://github.com/omilun/Fluxbaan.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
+          - --opt=filename=Dockerfile
+          - --opt=platform=linux/amd64,linux/arm64
+          - --output=type=image,\"name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:{{inputs.parameters.tag}},registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:latest\",push=true,registry.insecure=true,oci-mediatypes=true
+        resources:
+          requests: {memory: 512Mi, cpu: 500m}
+          limits:   {memory: 2Gi,   cpu: 2000m}
+
+    # ── cosign keyless signing (Fulcio + Rekor public good instance) ─────────
+    - name: cosign-sign
+      inputs:
+        parameters: [{name: image}]
+      container:
+        image: gcr.io/projectsigstore/cosign:v2.4.1
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            export COSIGN_EXPERIMENTAL=1
+            cosign sign --yes --allow-insecure-registry \
+              registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}
+        resources:
+          requests: {memory: 128Mi, cpu: 100m}
+          limits:   {memory: 512Mi, cpu: 500m}
+
+    # ── Helm chart: package + push as OCI artefact to the Zot registry ──────
+    - name: helm-package-push
+      inputs:
+        parameters:
+          - name: tag
+          - name: sha
+      container:
+        image: alpine/helm:3.16.4
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            apk add --no-cache git >/dev/null
+            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            cd /src && git checkout "{{inputs.parameters.sha}}"
+
+            # Strip leading "v" from chart version (semver).
+            CHART_VER="${VERSION#v}"
+
+            # Update appVersion + version in Chart.yaml to match the tag
+            sed -i \
+              -e "s/^version:.*/version: ${CHART_VER}/" \
+              -e "s/^appVersion:.*/appVersion: \"${CHART_VER}\"/" \
+              /src/charts/fluxbaan/Chart.yaml
+
+            helm package /src/charts/fluxbaan -d /tmp
+            helm push /tmp/fluxbaan-${CHART_VER}.tgz \
+              oci://registry.talos-tart-ha.talos-on-macos.com/charts
+        env:
+          - {name: VERSION, value: "{{inputs.parameters.tag}}"}
+          - {name: HELM_REGISTRY_CONFIG, value: /tmp/.config/helm/registry/config.json}
+        resources:
+          requests: {memory: 128Mi, cpu: 100m}
+          limits:   {memory: 512Mi, cpu: 500m}

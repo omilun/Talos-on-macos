@@ -1,0 +1,114 @@
+# Argo Workflows — lint + test pipeline for Fluxbaan.
+#
+# Runs in parallel:
+#   - go vet, go test (race) on the Go backend
+#   - npm ci, npm run lint, vitest, npm run build on the Next.js frontend
+#   - helm lint on the chart
+#
+# Triggered as a step inside fluxbaan-build (pre-build) and stand-alone via
+# the Argo Workflows UI.
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fluxbaan-test
+  namespace: argo
+spec:
+  entrypoint: test
+  serviceAccountName: argo-workflows-sa
+  arguments:
+    parameters:
+      - name: sha
+        value: "master"
+
+  templates:
+    - name: test
+      inputs:
+        parameters:
+          - name: sha
+      dag:
+        tasks:
+          - name: backend
+            template: go-test
+            arguments:
+              parameters:
+                - {name: sha, value: "{{inputs.parameters.sha}}"}
+
+          - name: frontend
+            template: npm-test
+            arguments:
+              parameters:
+                - {name: sha, value: "{{inputs.parameters.sha}}"}
+
+          - name: helm
+            template: helm-lint
+            arguments:
+              parameters:
+                - {name: sha, value: "{{inputs.parameters.sha}}"}
+
+    # ── Go: vet + race-tested go test ────────────────────────────────────────
+    - name: go-test
+      inputs:
+        parameters: [{name: sha}]
+      container:
+        image: golang:1.26-alpine
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            apk add --no-cache git ca-certificates >/dev/null
+            git clone --depth=1 --branch="{{inputs.parameters.sha}}" \
+              https://github.com/omilun/Fluxbaan.git /src 2>/dev/null \
+              || git clone https://github.com/omilun/Fluxbaan.git /src \
+              && (cd /src && git checkout "{{inputs.parameters.sha}}")
+            cd /src/backend
+            go vet ./...
+            go test ./... -race -count=1 -cover
+        resources:
+          requests: {memory: 512Mi, cpu: 250m}
+          limits:   {memory: 2Gi,   cpu: 2000m}
+        env:
+          - {name: GOFLAGS,  value: "-mod=mod"}
+          - {name: GOCACHE,  value: /tmp/go-cache}
+          - {name: GOMODCACHE, value: /tmp/go-mod}
+
+    # ── Frontend: lint + vitest + build ──────────────────────────────────────
+    - name: npm-test
+      inputs:
+        parameters: [{name: sha}]
+      container:
+        image: node:22-alpine
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            apk add --no-cache git >/dev/null
+            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            cd /src && git checkout "{{inputs.parameters.sha}}"
+            cd /src/frontend
+            npm ci --prefer-offline --no-audit --fund=false
+            npm run lint
+            npx vitest run
+            npm run build
+        resources:
+          requests: {memory: 512Mi, cpu: 250m}
+          limits:   {memory: 2Gi,   cpu: 2000m}
+
+    # ── Helm chart: lint + template render ───────────────────────────────────
+    - name: helm-lint
+      inputs:
+        parameters: [{name: sha}]
+      container:
+        image: alpine/helm:3.16.4
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            apk add --no-cache git >/dev/null
+            git clone --depth=1 https://github.com/omilun/Fluxbaan.git /src
+            cd /src && git checkout "{{inputs.parameters.sha}}"
+            helm lint /src/charts/fluxbaan
+            helm template /src/charts/fluxbaan --debug > /tmp/render.yaml
+            wc -l /tmp/render.yaml
+        resources:
+          requests: {memory: 128Mi, cpu: 100m}
+          limits:   {memory: 512Mi, cpu: 500m}
