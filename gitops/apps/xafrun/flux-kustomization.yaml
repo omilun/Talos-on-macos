@@ -1,0 +1,38 @@
+# Flux Kustomization — xafrun deploy
+# Flux directly reconciles the xafrun workloads (no ArgoCD).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: xafrun
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/apps/xafrun/deploy
+  prune: true
+  targetNamespace: xafrun
+  wait: true
+  timeout: 5m
+  dependsOn:
+    - name: infrastructure
+---
+# Flux Kustomization — xafrun CI pipeline
+# Deploys WorkflowTemplates, EventSource, Sensors into the argo namespace.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: xafrun-ci
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./gitops/apps/xafrun/ci
+  prune: true
+  wait: true
+  timeout: 5m
+  dependsOn:
+    - name: infrastructure
