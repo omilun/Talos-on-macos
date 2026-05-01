@@ -9,3 +9,4 @@ resources:
   - cron-scan.yaml
   - eventsource.yaml
   - sensor.yaml
+  - httproute.yaml
