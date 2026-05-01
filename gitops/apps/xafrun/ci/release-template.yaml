@@ -137,11 +137,27 @@ spec:
               /src/charts/xafrun/Chart.yaml
 
             helm package /src/charts/xafrun -d /tmp
+
+            # Push to in-cluster Zot registry
             helm push /tmp/xafrun-${CHART_VER}.tgz \
               oci://registry.talos-tart-ha.talos-on-macos.com/charts
+
+            # Push to public GHCR (if token is available)
+            if [ -n "${GHCR_TOKEN:-}" ]; then
+              echo "${GHCR_TOKEN}" | helm registry login ghcr.io \
+                --username omilun --password-stdin
+              helm push /tmp/xafrun-${CHART_VER}.tgz \
+                oci://ghcr.io/omilun/charts
+            fi
         env:
           - {name: VERSION, value: "{{inputs.parameters.tag}}"}
           - {name: HELM_REGISTRY_CONFIG, value: /tmp/.config/helm/registry/config.json}
+          - name: GHCR_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: ghcr-token
+                key: token
+                optional: true
         resources:
           requests: {memory: 128Mi, cpu: 100m}
           limits:   {memory: 512Mi, cpu: 500m}
