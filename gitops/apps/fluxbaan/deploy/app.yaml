@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-frontend:sha-07b7840a710e3d8551f429b7b3a0611f1a2311c1
+        image: registry.talos-tart-ha.talos-on-macos.com/fluxbaan-frontend:sha-75a50c4822465da53ea7cc49097579e518a35dc4
         ports:
         - containerPort: 3000
         env:
