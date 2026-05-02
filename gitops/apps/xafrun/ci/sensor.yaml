@@ -1,132 +1,31 @@
-# Argo Events — Sensors for the Xafrun CI pipeline.
-#
-# Two sensors share the same EventSource (xafrun-github):
-#   1. xafrun-ci      — runs xafrun-build on every push to master
-#                         (additionally runs xafrun-docs if docs/ or
-#                          mkdocs.yml changed; see filter below)
-#   2. xafrun-release — runs xafrun-release on every tag create event
-#                         matching v*.*.* (semver tags only)
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: xafrun-ci
+  name: xafrun-build
   namespace: argo
 spec:
   template:
     serviceAccountName: argo-events-sa
   dependencies:
-    - name: xafrun-push
+    - name: github-dep
       eventSourceName: xafrun-github
       eventName: xafrun-push
-      filters:
-        data:
-          - path: body.ref
-            type: string
-            value:
-              - refs/heads/master
   triggers:
     - template:
-        name: trigger-xafrun-build
-        argoWorkflow:
-          operation: submit
+        name: xafrun-workflow-trigger
+        k8s:
+          operation: create
           source:
             resource:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
                 generateName: xafrun-build-
-                namespace: argo
               spec:
                 workflowTemplateRef:
                   name: xafrun-build
-                arguments:
-                  parameters:
-                    - name: sha
-                      value: "placeholder"
           parameters:
             - src:
-                dependencyName: xafrun-push
+                dependencyName: github-dep
                 dataKey: body.after
               dest: spec.arguments.parameters.0.value
-
-    # Same push triggers a docs rebuild (cheap; no-op if docs unchanged is
-    # not implemented — mkdocs build is fast enough that we just always run
-    # it). If you want to gate by changed paths, wire body.commits[*].modified
-    # into a Sensor filter.
-    - template:
-        name: trigger-xafrun-docs
-        argoWorkflow:
-          operation: submit
-          source:
-            resource:
-              apiVersion: argoproj.io/v1alpha1
-              kind: Workflow
-              metadata:
-                generateName: xafrun-docs-
-                namespace: argo
-              spec:
-                workflowTemplateRef:
-                  name: xafrun-docs
-                arguments:
-                  parameters:
-                    - name: sha
-                      value: "placeholder"
-          parameters:
-            - src:
-                dependencyName: xafrun-push
-                dataKey: body.after
-              dest: spec.arguments.parameters.0.value
-
----
-apiVersion: argoproj.io/v1alpha1
-kind: Sensor
-metadata:
-  name: xafrun-release
-  namespace: argo
-spec:
-  template:
-    serviceAccountName: argo-events-sa
-  dependencies:
-    - name: xafrun-tag
-      eventSourceName: xafrun-github
-      eventName: xafrun-push
-      filters:
-        data:
-          - path: body.ref_type
-            type: string
-            value: ["tag"]
-          - path: body.ref
-            type: string
-            comparator: "=~"
-            value: ["^v[0-9]+\\.[0-9]+\\.[0-9]+$"]
-  triggers:
-    - template:
-        name: trigger-xafrun-release
-        argoWorkflow:
-          operation: submit
-          source:
-            resource:
-              apiVersion: argoproj.io/v1alpha1
-              kind: Workflow
-              metadata:
-                generateName: xafrun-release-
-                namespace: argo
-              spec:
-                workflowTemplateRef:
-                  name: xafrun-release
-                arguments:
-                  parameters:
-                    - {name: tag, value: "placeholder-tag"}
-                    - {name: sha, value: "placeholder-sha"}
-          parameters:
-            - src:
-                dependencyName: xafrun-tag
-                dataKey: body.ref
-              dest: spec.arguments.parameters.0.value
-            - src:
-                dependencyName: xafrun-tag
-                # GitHub `create` events for tags don't carry the SHA in
-                # `after`. Use `head_commit.id` from the followup push, or
-                # fall back to the ref name itself for BuildKit.
-                dataKey: body.master_branch
-              dest: spec.arguments.parameters.1.value

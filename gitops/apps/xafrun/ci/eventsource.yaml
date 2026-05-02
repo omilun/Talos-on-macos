@@ -1,12 +1,3 @@
-# Argo Events — GitHub webhook EventSource for the Xafrun repo.
-#
-# Listens on port 12000 for push events. GitHub webhook setup (one-time):
-#   URL:    https://events.talos-tart-ha.talos-on-macos.com/xafrun/push
-#   Secret: value of the 'secret' key in github-webhook-secret
-#   Events: push, create
-#
-# Reuses the existing 'github-webhook-secret' and 'github-token' secrets in
-# the argo namespace (created during pulse onboarding).
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
@@ -27,7 +18,6 @@ spec:
         method: POST
       events:
         - push
-        - create                       # tag pushes arrive as create events
       apiToken:
         name: github-token
         key: token
