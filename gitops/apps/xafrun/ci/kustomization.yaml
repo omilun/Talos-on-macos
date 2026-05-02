@@ -2,5 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - workflow-template.yaml
+  - test-template.yaml
+  - scan-template.yaml
+  - release-template.yaml
+  - docs-template.yaml
+  - cron-scan.yaml
   - eventsource.yaml
   - sensor.yaml
+  - httproute.yaml
