@@ -16,7 +16,7 @@ spec:
       serviceAccountName: xafrun-backend
       containers:
       - name: backend
-        image: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend:sha-6ce32c1836330dbb588be1cde0ed696bf931d8a1
+        image: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend:sha-7eaf86ee37f2f9068be47fc534cf83206710e75f
         ports:
         - containerPort: 8080
 ---
@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend:sha-6ce32c1836330dbb588be1cde0ed696bf931d8a1
+        image: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend:sha-7eaf86ee37f2f9068be47fc534cf83206710e75f
         ports:
         - containerPort: 3000
         env:
