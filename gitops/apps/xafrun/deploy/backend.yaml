@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: backend
-          image: ghcr.io/omilun/xafrun-backend:0.1.5
+          image: ghcr.io/omilun/xafrun-backend:0.1.6
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
