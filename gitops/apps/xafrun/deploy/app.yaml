@@ -16,7 +16,7 @@ spec:
       serviceAccountName: xafrun-backend
       containers:
       - name: backend
-        image: ghcr.io/omilun/xafrun-backend:0.1.1
+        image: ghcr.io/omilun/xafrun-backend:0.1.3
         ports:
         - containerPort: 8080
 ---
@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/omilun/xafrun-frontend:0.1.1
+        image: ghcr.io/omilun/xafrun-frontend:0.1.3
         ports:
         - containerPort: 3000
         env:
