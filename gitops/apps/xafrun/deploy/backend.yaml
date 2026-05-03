@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: backend
-          image: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend:sha-b89a7aa51178fbcafa1fb4a4a5dd0975b708d2d7
+          image: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend:sha-21fde1a61449aa65bd2a95391d150921b08b8e1d
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
