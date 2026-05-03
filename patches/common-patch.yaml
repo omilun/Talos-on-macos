@@ -28,3 +28,11 @@ machine:
     modules:
       - name: br_netfilter
       # NOTE: ip6_tables is NOT included — module is absent on Talos ARM64 and causes log noise
+  # Registry config: containerd on nodes can reach the LB IP but the cert-manager CA
+  # is not in Talos's trust store. insecureSkipVerify allows pulls over HTTPS without
+  # cert verification (acceptable for an internal homelab registry).
+  registries:
+    config:
+      registry.talos-tart-ha.talos-on-macos.com:
+        tls:
+          insecureSkipVerify: true
