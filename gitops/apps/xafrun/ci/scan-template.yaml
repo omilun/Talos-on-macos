@@ -39,6 +39,7 @@ spec:
               --no-progress \
               --ignore-unfixed \
               --insecure \
+              --cache-dir /tmp/trivy-cache \
               zot.registry.svc.cluster.local:5000/{{inputs.parameters.image}}
         resources:
           requests: {memory: 256Mi, cpu: 200m}
