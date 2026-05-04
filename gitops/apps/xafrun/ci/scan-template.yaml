@@ -45,18 +45,55 @@ spec:
           limits:   {memory: 1Gi,   cpu: 1000m}
 
     # ── Scan all currently-deployed images (called by nightly cron) ──────────
+    # Uses the most recent tag in Zot by listing tags and scanning the latest SHA.
     - name: scan-all
+      inputs:
+        parameters:
+          - name: backend-tag
+            value: "xafrun-backend:latest-built"
+          - name: frontend-tag
+            value: "xafrun-frontend:latest-built"
       dag:
         tasks:
+          - name: get-tags
+            template: resolve-latest-tags
           - name: backend
             template: trivy-image
+            dependencies: [get-tags]
             arguments:
               parameters:
-                - {name: image,    value: "xafrun-backend:latest"}
+                - {name: image,    value: "xafrun-backend:{{tasks.get-tags.outputs.parameters.backend-sha}}"}
                 - {name: exitCode, value: "1"}
           - name: frontend
             template: trivy-image
+            dependencies: [get-tags]
             arguments:
               parameters:
-                - {name: image,    value: "xafrun-frontend:latest"}
+                - {name: image,    value: "xafrun-frontend:{{tasks.get-tags.outputs.parameters.frontend-sha}}"}
                 - {name: exitCode, value: "1"}
+
+    # ── Resolve latest SHA tags from Zot ─────────────────────────────────────
+    - name: resolve-latest-tags
+      outputs:
+        parameters:
+          - name: backend-sha
+            valueFrom: {path: /tmp/backend-sha}
+          - name: frontend-sha
+            valueFrom: {path: /tmp/frontend-sha}
+      container:
+        image: curlimages/curl:8.6.0
+        command: [sh, -c]
+        args:
+          - |
+            set -euo pipefail
+            REGISTRY=zot.registry.svc.cluster.local:5000
+            get_latest() {
+              curl -sf "http://${REGISTRY}/v2/$1/tags/list" \
+                | grep -o '"sha-[^"]*"' | tr -d '"' | sort | tail -1
+            }
+            get_latest xafrun-backend  > /tmp/backend-sha
+            get_latest xafrun-frontend > /tmp/frontend-sha
+            echo "backend:  $(cat /tmp/backend-sha)"
+            echo "frontend: $(cat /tmp/frontend-sha)"
+        resources:
+          requests: {memory: 64Mi, cpu: 50m}
