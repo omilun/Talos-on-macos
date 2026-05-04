@@ -9,7 +9,9 @@ metadata:
 spec:
   description: User applications deployed via ArgoCD
   sourceRepos:
-    - "https://github.com/omilun/*"   # allow any repo under your GitHub account
+    - "https://github.com/omilun/Talos-on-macos"
+    - "https://github.com/omilun/pulse"
+    - "https://github.com/omilun/Xafrun"
   destinations:
     - namespace: "*"
       server: https://kubernetes.default.svc

@@ -7,7 +7,7 @@
 # Required secrets (one-time manual setup):
 #   kubectl create secret generic github-token -n argo --from-literal=token=<PAT>
 #   kubectl create secret docker-registry registry-credentials -n buildkit \
-#     --docker-server=registry.talos-tart-ha.talos-on-macos.com \
+#     --docker-server=zot.registry.svc.cluster.local:5000 \
 #     --docker-username=<user> --docker-password=<password>
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
@@ -102,7 +102,7 @@ spec:
           - --output
           # oci-mediatypes=true required for Zot registry (OCI Distribution Spec v1.1)
           # Push both sha tag (for GitOps PR) and :latest (for convenience)
-          - type=image,name=registry.talos-tart-ha.talos-on-macos.com/pulse/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
+          - type=image,name=zot.registry.svc.cluster.local:5000/pulse/{{inputs.parameters.image}}:sha-{{inputs.parameters.sha}},push=true,registry.insecure=true,oci-mediatypes=true
         resources:
           requests:
             memory: 256Mi
@@ -134,7 +134,7 @@ spec:
           SHORT_SHA="${COMMIT_SHA:0:7}"
           BRANCH="chore/update-pulse-${SHORT_SHA}"
           REPO="omilun/Talos-on-macos"
-          REGISTRY="registry.talos-tart-ha.talos-on-macos.com/pulse"
+          REGISTRY="zot.registry.svc.cluster.local:5000/pulse"
 
           echo "Opening PR for sha-${SHORT_SHA}..."
 

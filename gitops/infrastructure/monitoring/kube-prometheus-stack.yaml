@@ -6,9 +6,13 @@
 #          prometheus.prometheusSpec.storageSpec and grafana.persistence.enabled.
 #
 # Access:
-#   https://grafana.local        (admin / change-me — update via Flux secret)
+#   https://grafana.local        (admin — password stored in grafana-admin-secret)
 #   https://prometheus.local
 #   https://alertmanager.local
+#
+# Bootstrap (one-time, run before applying):
+#   kubectl -n monitoring create secret generic grafana-admin-secret \
+#     --from-literal=admin-password="$(openssl rand -base64 24)"
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -34,10 +38,14 @@ spec:
     remediation:
       retries: 3
       remediateLastFailure: true
+  valuesFrom:
+    - kind: Secret
+      name: grafana-admin-secret
+      valuesKey: admin-password
+      targetPath: grafana.adminPassword
   values:
     # ── Grafana ────────────────────────────────────────────────────────────────
     grafana:
-      adminPassword: "change-me"   # Override with a Flux Secret or SOPS in production
       defaultDashboardsEnabled: true
       defaultDashboardsTimezone: browser
 

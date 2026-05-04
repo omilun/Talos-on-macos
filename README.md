@@ -170,3 +170,39 @@ sudo rm -f /etc/resolver/talos-on-macos.com
 | 📦 [Deploy apps](docs/deploy-apps.md) | Add apps with ArgoCD, CloudNativePG, HTTPS, cluster-native CI |
 | 🌍 [Multi-cluster](docs/multi-cluster.md) | Running multiple clusters side by side |
 | 🔧 [Troubleshooting](docs/troubleshooting.md) | VMs, Flux, Argo Events, BuildKit, Zot, ArgoCD |
+
+---
+
+## IP allocation
+
+All cluster IPs are within the Tart `vmnet-shared` bridge (`192.168.64.0/24`).
+The macOS DHCP server uses the high range, so these low/mid addresses are reserved:
+
+| Address / Range | Purpose |
+|----------------|---------|
+| `192.168.64.100` | Control plane VIP (Talos `vip`) |
+| `192.168.64.13` | cp-1 (talos-umo-o5b) — static via Terraform |
+| `192.168.64.16` | cp-2 (talos-7gp-iz4) — static via Terraform |
+| `192.168.64.17` | cp-3 (talos-b7b-ipu) — static via Terraform |
+| `192.168.64.14` | worker-1 (talos-4pz-tmk) — static via Terraform |
+| `192.168.64.15` | worker-2 (talos-eg3-3hf) — static via Terraform |
+| `192.168.64.18` | worker-3 (talos-hlo-kvt) — static via Terraform |
+| `192.168.64.192` | Cilium LB — `*.talos-tart-ha.talos-on-macos.com` Gateway |
+| `192.168.64.200/28` | Cilium LB pool — `192.168.64.200–215` (additional services) |
+
+> **macOS DHCP** uses the upper portion of the subnet. Node IPs are assigned statically
+> by Terraform/Tart and are stable across reboots.
+
+---
+
+## Security notes
+
+This is a **homelab cluster** — some hardened-production defaults are intentionally relaxed:
+
+| Setting | Value | Rationale |
+|---------|-------|-----------|
+| Registry TLS verification | `insecureSkipVerify: true` | Self-signed cert-manager cert on Zot; verification disabled at the Talos node level so containerd can pull images. Only the internal hostname is affected. |
+| Zot authentication | None | The registry (`zot.registry.svc.cluster.local:5000` / `registry.talos-tart-ha.talos-on-macos.com`) has no auth. It is only accessible within the cluster or via the private Cilium LB — not exposed to the internet. |
+| Grafana admin password | Secret (`grafana-admin-secret`) | Created once with `kubectl` at bootstrap time — **not committed to git**. See the comment at the top of `gitops/infrastructure/monitoring/kube-prometheus-stack.yaml`. |
+
+Do **not** expose this cluster's services (Grafana, ArgoCD, Argo Workflows) to the public internet without adding authentication.

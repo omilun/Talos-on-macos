@@ -2,10 +2,10 @@
 #
 # Triggered when a tag `v*.*.*` is pushed to omilun/Xafrun.
 # Produces, in parallel:
-#   1. tagged + :latest backend image (multi-arch via BuildKit)
-#   2. tagged + :latest frontend image
+#   1. tagged + :latest backend image pushed to in-cluster Zot (zot.registry.svc.cluster.local:5000)
+#   2. tagged + :latest frontend image pushed to in-cluster Zot
 #   3. cosign-signed digests for both (keyless via Sigstore Fulcio)
-#   4. Helm chart packaged and pushed as OCI artefact to the cluster Zot
+#   4. Helm chart packaged and pushed as OCI artefact to Zot + optionally GHCR
 #
 # Required cluster secrets (one-time):
 #   kubectl create secret generic cosign-key -n argo \
@@ -89,7 +89,7 @@ spec:
           - --opt=context=https://github.com/omilun/Xafrun.git#{{inputs.parameters.sha}}:{{inputs.parameters.subpath}}
           - --opt=filename=Dockerfile
           - --opt=platform=linux/amd64,linux/arm64
-          - --output=type=image,\"name=registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:{{inputs.parameters.tag}},registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}:latest\",push=true,registry.insecure=true,oci-mediatypes=true
+          - --output=type=image,\"name=zot.registry.svc.cluster.local:5000/{{inputs.parameters.image}}:{{inputs.parameters.tag}},zot.registry.svc.cluster.local:5000/{{inputs.parameters.image}}:latest\",push=true,registry.insecure=true,oci-mediatypes=true
         resources:
           requests: {memory: 512Mi, cpu: 500m}
           limits:   {memory: 2Gi,   cpu: 2000m}
@@ -106,7 +106,7 @@ spec:
             set -euo pipefail
             export COSIGN_EXPERIMENTAL=1
             cosign sign --yes --allow-insecure-registry \
-              registry.talos-tart-ha.talos-on-macos.com/{{inputs.parameters.image}}
+              zot.registry.svc.cluster.local:5000/{{inputs.parameters.image}}
         resources:
           requests: {memory: 128Mi, cpu: 100m}
           limits:   {memory: 512Mi, cpu: 500m}
@@ -140,7 +140,7 @@ spec:
 
             # Push to in-cluster Zot registry
             helm push /tmp/xafrun-${CHART_VER}.tgz \
-              oci://registry.talos-tart-ha.talos-on-macos.com/charts
+              oci://zot.registry.svc.cluster.local:5000/charts
 
             # Push to public GHCR (if token is available)
             if [ -n "${GHCR_TOKEN:-}" ]; then
