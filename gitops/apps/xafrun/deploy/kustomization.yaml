@@ -5,3 +5,13 @@ resources:
   - frontend.yaml
   - rbac.yaml
   - httproute.yaml
+
+# Override the upstream ghcr.io image names with the internal Zot registry + SHA tag.
+# To deploy a new release: update newTag in both entries below.
+images:
+  - name: ghcr.io/omilun/xafrun-backend
+    newName: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend
+    newTag: sha-e50aca6196f916bee60fe0d0f6bef80f9bd221d3
+  - name: ghcr.io/omilun/xafrun-frontend
+    newName: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend
+    newTag: sha-e50aca6196f916bee60fe0d0f6bef80f9bd221d3
