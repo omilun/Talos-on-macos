@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: frontend
-          image: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend:sha-b6186d30a835314d9cf5d108da4ce19fa736571b
+          image: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend:sha-e50aca6196f916bee60fe0d0f6bef80f9bd221d3
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
