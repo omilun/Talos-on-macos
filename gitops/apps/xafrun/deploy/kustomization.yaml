@@ -11,7 +11,7 @@ resources:
 images:
   - name: ghcr.io/omilun/xafrun-backend
     newName: registry.talos-tart-ha.talos-on-macos.com/xafrun-backend
-    newTag: sha-b5ac824732569270f950344b18505743f727aa99
+    newTag: sha-44d33b81264b575be967f0091a68a2452406c322
   - name: ghcr.io/omilun/xafrun-frontend
     newName: registry.talos-tart-ha.talos-on-macos.com/xafrun-frontend
-    newTag: sha-b5ac824732569270f950344b18505743f727aa99
+    newTag: sha-44d33b81264b575be967f0091a68a2452406c322
