@@ -1,6 +1,6 @@
 <div align="center">
 
-# Running your own Kubernetes clusters on macOS using Talos Linux and Tart
+# Run Talos-Linux clusters on mac!
 
 [**Talos Linux**](https://talos.dev) is an immutable, API-driven OS built exclusively for Kubernetes.
 No SSH. No shell. No config drift. Just a cluster.
